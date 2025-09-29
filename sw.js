@@ -1,54 +1,104 @@
-// sw.js — cache très simple pour offline
-const CACHE = 'jw-local-v1';
-const ASSETS = [
+const STATIC_CACHE = 'aac-static-v1';
+const MP3_CACHE = 'aac-mp3-v1';
+const STATIC_ASSETS = [
   './',
   './index.html',
-  './404.html'
+  './styles.css',
+  './app.js',
+  './manifest.webmanifest',
+  './offline.html',
+  './icons/icon-192.png',
+  './icons/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE).then(cache => cache.addAll(ASSETS))
+    caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS))
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.map(k => (k !== CACHE ? caches.delete(k) : Promise.resolve())))
-    ).then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => ![STATIC_CACHE, MP3_CACHE].includes(key))
+            .map((key) => caches.delete(key))
+        )
+      )
+      .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (event) => {
-  const req = event.request;
-  // HTML : Network-first avec fallback cache + 404 offline
-  if (req.mode === 'navigate') {
-    event.respondWith((async () => {
-      try {
-        const fresh = await fetch(req);
-        const cache = await caches.open(CACHE);
-        cache.put('./index.html', fresh.clone());
-        return fresh;
-      } catch {
-        const cache = await caches.open(CACHE);
-        return (await cache.match('./index.html')) || (await cache.match('./404.html'));
-      }
-    })());
+  const { request } = event;
+  const url = new URL(request.url);
+
+  if (request.method !== 'GET') {
     return;
   }
-  // Assets : Cache-first, puis réseau
-  event.respondWith((async () => {
-    const cached = await caches.match(req);
-    if (cached) return cached;
-    try {
-      const fresh = await fetch(req);
-      const cache = await caches.open(CACHE);
-      cache.put(req, fresh.clone());
-      return fresh;
-    } catch {
-      return caches.match('./404.html');
-    }
-  })());
+
+  if (url.origin === self.location.origin && url.pathname.startsWith('/tts/')) {
+    event.respondWith(cacheFirst(request, MP3_CACHE));
+    return;
+  }
+
+  if (request.mode === 'navigate') {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  if (url.origin === self.location.origin && STATIC_ASSETS.includes(getAssetKey(url))) {
+    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    return;
+  }
 });
+
+function getAssetKey(url) {
+  if (url.pathname.endsWith('/') || url.pathname === '') {
+    return './';
+  }
+  return `.${url.pathname}`;
+}
+
+async function cacheFirst(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  if (cached) {
+    return cached;
+  }
+  try {
+    const response = await fetch(request);
+    if (response && response.status === 200) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch (error) {
+    if (cacheName === MP3_CACHE) {
+      return new Response(null, { status: 504, statusText: 'Audio indisponible' });
+    }
+    throw error;
+  }
+}
+
+async function networkFirst(request) {
+  const cache = await caches.open(STATIC_CACHE);
+  try {
+    const response = await fetch(request);
+    cache.put('./index.html', response.clone());
+    return response;
+  } catch (error) {
+    const cached = await cache.match('./index.html');
+    if (cached) {
+      return cached;
+    }
+    const offline = await cache.match('./offline.html');
+    if (offline) {
+      return offline;
+    }
+    throw error;
+  }
+}
