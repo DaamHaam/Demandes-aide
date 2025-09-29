@@ -1,108 +1,42 @@
-name: Pages (prod & PR previews & archives & beta)
+name: Pages (official - production)
 
 on:
   push:
-    branches: [ main, next ]       # prod sur main, beta sur next
-    tags: ['v*']                    # archives vX.Y.Z
-  pull_request:
-    branches: [ main, next ]        # previews pour PR vers main OU next
+    branches: [ main ]        # déploie la prod à chaque push sur main
+  workflow_dispatch:          # déclenchement manuel si besoin
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
-  # Empêche des runs concurrents sur la même ref (utile pour PR et branches)
-  group: pages-${{ github.workflow }}-${{ github.ref }}
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  prod:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      # Désactive Jekyll (important pour les dossiers qui commencent par _)
+      # Désactiver Jekyll (important si un dossier commence par _)
       - run: echo > .nojekyll
 
-      # Fallback 404 pour SPA/PWA (utile si plus tard tu gères du routing client)
-      - name: Create 404 fallback
-        run: cp -f index.html 404.html || true
+      # Fallback SPA/PWA : 404.html = copie d'index.html
+      - run: cp -f index.html 404.html || true
 
-      - name: Deploy production to gh-pages (root)
-        uses: JamesIves/github-pages-deploy-action@v4
+      # Empaqueter le site à publier (racine du repo)
+      - uses: actions/upload-pages-artifact@v3
         with:
-          branch: gh-pages
-          folder: .
-          clean: true
-          clean-exclude: |
-            previews/**
-            versions/**
-            beta/**
-    environment:
-      name: production
-      url: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+          path: .
 
-  preview:
-    if: github.event_name == 'pull_request'
+  deploy:
+    needs: build
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: echo > .nojekyll
-      - name: Create 404 fallback
-        run: cp -f index.html 404.html || true
-
-      - name: Deploy PR preview
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages
-          folder: .
-          target-folder: previews/pr-${{ github.event.number }}
-          clean: false
-
-      - id: link
-        run: echo "url=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/previews/pr-${{ github.event.number }}/" >> $GITHUB_OUTPUT
-
     environment:
-      name: preview
-      url: ${{ steps.link.outputs.url }}
-
-  archive:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - run: echo > .nojekyll
-      - name: Create 404 fallback
-        run: cp -f index.html 404.html || true
-
-      - name: Deploy archived version to versions/<tag>
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages
-          folder: .
-          target-folder: versions/${{ github.ref_name }}
-          clean: false
-    environment:
-      name: archive
-      url: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/versions/${{ github.ref_name }}/
-
-  beta:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/next'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: echo > .nojekyll
-      - name: Create 404 fallback
-        run: cp -f index.html 404.html || true
-
-      - name: Deploy beta channel
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages
-          folder: .
-          target-folder: beta
-          clean: true
-    environment:
-      name: beta
-      url: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/beta/
+      - id: deployment
+        uses: actions/deploy-pages@v4
