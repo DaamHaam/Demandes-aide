@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Je voudrais… (prototype local)</title>
+<style>
+  body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f6f7f9}
+  header{position:sticky;top:0;background:white;border-bottom:1px solid #e6e8eb;padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+  h1{font-size:18px;margin:0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:16px}
+  button.phrase{font-size:18px;padding:18px;border:0;border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.08);text-align:left;line-height:1.25}
+  button.phrase:active{transform:scale(.99)}
+  .pinned{outline:3px solid #ff7a00}
+  .toolbar{display:flex;align-items:center;gap:10px}
+  .small{font-size:12px;color:#666}
+  form#addForm{display:flex;gap:8px;padding:12px 16px;background:#fff;border-top:1px solid #e6e8eb;position:sticky;bottom:0}
+  form#addForm input, form#addForm button, form#addForm select{font-size:16px;padding:10px;border:1px solid #d0d7de;border-radius:8px}
+  form#addForm button{background:#0d6efd;border-color:#0d6efd;color:#fff}
+</style>
+
+<header>
+  <h1>Je voudrais…</h1>
+  <div class="toolbar">
+    <label class="small">Volume
+      <input id="gain" type="range" min="0" max="1" step="0.05" value="1"/>
+    </label>
+    <button id="pinToggle">Afficher les favoris d’abord</button>
+  </div>
+</header>
+
+<main class="grid" id="grid" aria-live="polite"></main>
+
+<form id="addForm" autocomplete="off">
+  <input id="label" placeholder="Texte du bouton (ex: Un verre d'eau)" required />
+  <input id="tts" placeholder="Phrase parlée (ex: Je voudrais boire de l'eau.)" />
+  <label class="small"><input type="checkbox" id="pinned" /> Favori</label>
+  <button>Ajouter</button>
+</form>
+
+<script>
+const KEY = 'aac_phrases_v1';
+const defaults = [
+  ["toilettes","Aller aux toilettes","Je voudrais aller aux toilettes.",true,1,["toilettes"]],
+  ["boire","Boire","Je voudrais boire.",true,2,["boire"]],
+  ["manger","Manger","Je voudrais manger.",false,3,["repas"]],
+  ["medic","Mes médicaments","Je voudrais prendre mes médicaments.",false,4,["médicaments"]],
+  ["tv","Allumer la télé","Pouvez-vous allumer la télévision, s’il vous plaît ?",false,5,["loisirs"]],
+  ["descendre","Descendre","Je voudrais descendre.",false,6,["déplacement"]],
+  ["jardin","Aller dans le jardin","Je voudrais aller dans le jardin.",false,7,["sortie"]],
+  ["coucher","Me coucher","Je voudrais me coucher.",false,8,["repos"]],
+  ["douleur","Douleur","J’ai mal, j’ai une douleur.",true,9,["douleur"]]
+].map(([id,label,tts,pinned,order,tags])=>({id,label,tts_text:tts,pinned,sort_order:order,tags}));
+
+function load(){
+  const raw = localStorage.getItem(KEY);
+  if(!raw){ localStorage.setItem(KEY, JSON.stringify(defaults)); return defaults.slice(); }
+  try{ return JSON.parse(raw); }catch{ localStorage.setItem(KEY, JSON.stringify(defaults)); return defaults.slice(); }
+}
+function save(list){ localStorage.setItem(KEY, JSON.stringify(list)); }
+
+let phrases = load();
+let showPinnedFirst = true;
+
+const grid = document.getElementById('grid');
+const gainEl = document.getElementById('gain');
+const ctx = new (window.AudioContext||window.webkitAudioContext)();
+const gainNode = ctx.createGain(); gainNode.gain.value = parseFloat(gainEl.value); gainNode.connect(ctx.destination);
+gainEl.addEventListener('input', ()=>{ gainNode.gain.value = parseFloat(gainEl.value); });
+
+function pickFrenchVoice(){
+  const vs = speechSynthesis.getVoices();
+  return vs.find(v=>/fr[-_]?FR/i.test(v.lang) && v.name.toLowerCase().includes('female'))
+      || vs.find(v=>/fr[-_]?FR/i.test(v.lang))
+      || vs[0];
+}
+
+function speak(text){
+  // Web Speech API with a tiny “beep” gated by WebAudio gain
+  try{ if(ctx.state==='suspended') ctx.resume(); }catch{}
+  const utter = new SpeechSynthesisUtterance(text);
+  const voice = pickFrenchVoice();
+  if(voice) utter.voice = voice;
+  utter.rate = 1.0; utter.pitch = 1.0;
+  speechSynthesis.cancel(); // stop previous
+  speechSynthesis.speak(utter);
+}
+
+function render(){
+  grid.innerHTML = '';
+  const list = phrases.slice().sort((a,b)=>{
+    if(showPinnedFirst && a.pinned!==b.pinned) return a.pinned? -1: 1;
+    return (a.sort_order||0) - (b.sort_order||0);
+  });
+  for(const p of list){
+    const btn = document.createElement('button');
+    btn.className = 'phrase' + (p.pinned ? ' pinned':'');
+    btn.textContent = p.label;
+    btn.addEventListener('click', ()=> speak(p.tts_text || p.label));
+    grid.appendChild(btn);
+  }
+}
+
+document.getElementById('pinToggle').onclick = ()=>{
+  showPinnedFirst = !showPinnedFirst; render();
+};
+
+document.getElementById('addForm').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const label = document.getElementById('label').value.trim();
+  const tts = (document.getElementById('tts').value.trim() || label);
+  const pinned = document.getElementById('pinned').checked;
+  const id = label.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,'-').replace(/^-+|-+$/g,'') + '-' + Date.now().toString(36);
+  const sort_order = (phrases.reduce((m,p)=>Math.max(m,p.sort_order||0),0) + 1);
+  phrases.push({id,label,tts_text:tts,pinned,sort_order,tags:[]});
+  save(phrases);
+  (e.target).reset();
+  render();
+});
+
+if (speechSynthesis.onvoiceschanged !== undefined) {
+  speechSynthesis.onvoiceschanged = render;
+}
+render();
+</script>
+</html>
