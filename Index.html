@@ -1,8 +1,9 @@
-<!doctype  html>
+<!doctype html>
 <html lang="fr">
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Je voudrais… (prototype local)</title>
+<meta name="theme-color" content="#ffffff" />
+<title>Je voudrais…</title>
 <style>
   body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f6f7f9}
   header{position:sticky;top:0;background:white;border-bottom:1px solid #e6e8eb;padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between}
@@ -14,7 +15,7 @@
   .toolbar{display:flex;align-items:center;gap:10px}
   .small{font-size:12px;color:#666}
   form#addForm{display:flex;gap:8px;padding:12px 16px;background:#fff;border-top:1px solid #e6e8eb;position:sticky;bottom:0}
-  form#addForm input, form#addForm button, form#addForm select{font-size:16px;padding:10px;border:1px solid #d0d7de;border-radius:8px}
+  form#addForm input, form#addForm button{font-size:16px;padding:10px;border:1px solid #d0d7de;border-radius:8px}
   form#addForm button{background:#0d6efd;border-color:#0d6efd;color:#fff}
 </style>
 
@@ -24,7 +25,7 @@
     <label class="small">Volume
       <input id="gain" type="range" min="0" max="1" step="0.05" value="1"/>
     </label>
-    <button id="pinToggle">Afficher les favoris d’abord</button>
+    <button id="pinToggle">Favoris d’abord</button>
   </div>
 </header>
 
@@ -69,20 +70,17 @@ gainEl.addEventListener('input', ()=>{ gainNode.gain.value = parseFloat(gainEl.v
 
 function pickFrenchVoice(){
   const vs = speechSynthesis.getVoices();
-  return vs.find(v=>/fr[-_]?FR/i.test(v.lang) && v.name.toLowerCase().includes('female'))
+  return vs.find(v=>/fr[-_]?FR/i.test(v.lang) && /female|f\u00E9minine/i.test(v.name))
       || vs.find(v=>/fr[-_]?FR/i.test(v.lang))
       || vs[0];
 }
-
 function speak(text){
-  // Web Speech API with a tiny “beep” gated by WebAudio gain
   try{ if(ctx.state==='suspended') ctx.resume(); }catch{}
-  const utter = new SpeechSynthesisUtterance(text);
-  const voice = pickFrenchVoice();
-  if(voice) utter.voice = voice;
-  utter.rate = 1.0; utter.pitch = 1.0;
-  speechSynthesis.cancel(); // stop previous
-  speechSynthesis.speak(utter);
+  const u = new SpeechSynthesisUtterance(text);
+  const v = pickFrenchVoice(); if(v) u.voice = v;
+  u.rate = 1.0; u.pitch = 1.0;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
 }
 
 function render(){
@@ -121,5 +119,12 @@ if (speechSynthesis.onvoiceschanged !== undefined) {
   speechSynthesis.onvoiceschanged = render;
 }
 render();
+
+// --- Registration du Service Worker (scope racine du site) ---
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(console.error);
+  });
+}
 </script>
 </html>
