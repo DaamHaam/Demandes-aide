@@ -92,7 +92,6 @@ const grid = document.querySelector('#phraseGrid');
 const emptyState = document.querySelector('#emptyState');
 const addButton = document.querySelector('#addButton');
 const favoritesToggle = document.querySelector('#favoritesToggle');
-const volumeRange = document.querySelector('#volumeRange');
 const phraseTemplate = document.querySelector('#phraseTemplate');
 const dialog = document.querySelector('#phraseDialog');
 const dialogTitle = document.querySelector('#dialogTitle');
@@ -108,32 +107,20 @@ let phrases = loadPhrases();
 let settings = loadSettings();
 let generationQueue = loadQueue();
 let dragSourceId = null;
-let currentPlayingId = null;
 let isProcessingQueue = false;
+let activePhraseId = null;
+let playingPhraseId = null;
 
 const audio = new Audio();
 audio.preload = 'auto';
 audio.volume = settings.volume ?? 1;
-volumeRange.value = String(audio.volume);
-
-volumeRange.addEventListener('input', () => {
-  audio.volume = Number(volumeRange.value);
-  settings.volume = audio.volume;
-  saveSettings(settings);
-});
 
 audio.addEventListener('ended', () => {
-  if (currentPlayingId) {
-    toggleCardPlaying(currentPlayingId, false);
-    currentPlayingId = null;
-  }
+  playingPhraseId = null;
 });
 
 audio.addEventListener('error', () => {
-  if (currentPlayingId) {
-    toggleCardPlaying(currentPlayingId, false);
-    currentPlayingId = null;
-  }
+  playingPhraseId = null;
 });
 
 favoritesToggle.setAttribute('aria-pressed', settings.favoritesFirst ? 'true' : 'false');
@@ -337,18 +324,17 @@ function render() {
 
   for (const phrase of sorted) {
     const node = phraseTemplate.content.firstElementChild.cloneNode(true);
-    node.dataset.id = phrase.id;
-    const button = node.querySelector('.phrase-button');
+    const card = node.querySelector('.phrase-card');
+    card.dataset.id = phrase.id;
+    const button = card.querySelector('.phrase-button');
     button.textContent = phrase.label;
     button.addEventListener('click', () => handlePhraseTap(phrase.id));
 
-    node.classList.toggle('is-pinned', Boolean(phrase.pinned));
-    node.classList.toggle('no-audio', !phrase.hasMp3);
-    if (phrase.id === currentPlayingId) {
-      node.classList.add('is-playing');
-    }
+    card.classList.toggle('is-pinned', Boolean(phrase.pinned));
+    card.classList.toggle('no-audio', !phrase.hasMp3);
+    card.classList.toggle('is-active', phrase.id === activePhraseId);
 
-    const starButton = node.querySelector('.star');
+    const starButton = card.querySelector('.star');
     starButton.innerHTML = phrase.pinned ? '★' : '☆';
     starButton.classList.toggle('is-active', Boolean(phrase.pinned));
     starButton.setAttribute('aria-pressed', phrase.pinned ? 'true' : 'false');
@@ -357,52 +343,49 @@ function render() {
       togglePinned(phrase.id);
     });
 
-    const editButton = node.querySelector('.edit');
+    const editButton = card.querySelector('.edit');
     editButton.innerHTML = '✎';
     editButton.addEventListener('click', (event) => {
       event.stopPropagation();
       openDialog(phrase.id);
     });
 
-    node.addEventListener('dragstart', () => handleDragStart(phrase.id, node));
-    node.addEventListener('dragend', () => handleDragEnd(node));
-    node.addEventListener('dragover', (event) => handleDragOver(event, phrase.id));
-    node.addEventListener('dragleave', () => node.classList.remove('drag-over-top'));
-    node.addEventListener('drop', (event) => handleDrop(event, phrase.id));
+    card.addEventListener('dragstart', () => handleDragStart(phrase.id, card));
+    card.addEventListener('dragend', () => handleDragEnd(card));
+    card.addEventListener('dragover', (event) => handleDragOver(event, phrase.id));
+    card.addEventListener('dragleave', () => card.classList.remove('drag-over-top'));
+    card.addEventListener('drop', (event) => handleDrop(event, phrase.id));
 
     const isQueued = generationQueue.includes(phrase.id);
-    node.classList.toggle('is-generating', isQueued);
+    card.classList.toggle('is-generating', isQueued);
 
-    if (isQueued) {
-      const indicator = document.createElement('div');
-      indicator.className = 'queue-indicator';
-      indicator.innerHTML = '<span class="dot"></span> MP3 en cours...';
-      node.appendChild(indicator);
+    const indicator = node.querySelector('.queue-indicator');
+    if (indicator) {
+      indicator.hidden = !isQueued;
+      if (isQueued) {
+        indicator.innerHTML = '<span class="dot"></span> MP3 en cours...';
+      }
     }
 
     grid.appendChild(node);
   }
 }
 
-function toggleCardPlaying(id, active) {
-  const card = grid.querySelector(`[data-id="${id}"]`);
-  if (!card) return;
-  card.classList.toggle('is-playing', active);
-}
-
 async function handlePhraseTap(id) {
   const phrase = phrases.find((item) => item.id === id);
   if (!phrase) return;
 
-  toggleCardPlaying(id, true);
-  if (currentPlayingId && currentPlayingId !== id) {
-    toggleCardPlaying(currentPlayingId, false);
+  setActiveCard(id);
+
+  if (playingPhraseId && playingPhraseId !== id) {
+    audio.pause();
+    audio.currentTime = 0;
   }
-  currentPlayingId = id;
 
   if (phrase.hasMp3 && phrase.mp3Url) {
     try {
       audio.src = phrase.mp3Url;
+      playingPhraseId = id;
       await audio.play();
       return;
     } catch (error) {
@@ -413,12 +396,25 @@ async function handlePhraseTap(id) {
     }
   }
 
-  await new Promise((resolve) => setTimeout(resolve, 600));
-  toggleCardPlaying(id, false);
-  currentPlayingId = null;
+  playingPhraseId = null;
 
   if (!phrase.hasMp3) {
     enqueueGeneration(id);
+  }
+}
+
+function setActiveCard(id) {
+  if (activePhraseId && activePhraseId !== id) {
+    const previous = grid.querySelector(`.phrase-card[data-id="${activePhraseId}"]`);
+    if (previous) {
+      previous.classList.remove('is-active');
+    }
+  }
+
+  activePhraseId = id;
+  const card = grid.querySelector(`.phrase-card[data-id="${id}"]`);
+  if (card) {
+    card.classList.add('is-active');
   }
 }
 
@@ -443,7 +439,7 @@ function handleDragEnd(node) {
 function handleDragOver(event, targetId) {
   event.preventDefault();
   if (dragSourceId === targetId) return;
-  const target = grid.querySelector(`[data-id="${targetId}"]`);
+  const target = grid.querySelector(`.phrase-card[data-id="${targetId}"]`);
   if (target) {
     const bounding = target.getBoundingClientRect();
     const offset = event.clientY - bounding.top;
@@ -453,7 +449,7 @@ function handleDragOver(event, targetId) {
 
 function handleDrop(event, targetId) {
   event.preventDefault();
-  const target = grid.querySelector(`[data-id="${targetId}"]`);
+  const target = grid.querySelector(`.phrase-card[data-id="${targetId}"]`);
   if (target) {
     target.classList.remove('drag-over-top');
   }

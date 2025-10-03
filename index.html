@@ -14,20 +14,10 @@
   </head>
   <body>
     <header>
-      <div class="app-title">
-        <h1>Demandes rapides</h1>
-        <p>Exprimez les besoins essentiels en un tap, même hors-ligne.</p>
-      </div>
-      <div class="toolbar" role="toolbar" aria-label="Options de lecture">
-        <label class="range-field" for="volumeRange">
-          Volume
-          <input id="volumeRange" type="range" min="0" max="1" step="0.01" value="1" />
-        </label>
-        <button id="favoritesToggle" class="toggle-button" type="button" aria-pressed="false">
-          <span class="icon">★</span>
-          Favoris d'abord
-        </button>
-      </div>
+      <button id="favoritesToggle" class="toggle-button" type="button" aria-pressed="false">
+        <span class="icon">★</span>
+        Favoris d'abord
+      </button>
     </header>
 
     <main>
@@ -74,13 +64,16 @@
     </dialog>
 
     <template id="phraseTemplate">
-      <article class="phrase-card" draggable="true">
-        <button type="button" class="phrase-button"></button>
-        <div class="phrase-actions">
-          <button class="star" type="button" aria-label="Basculer en favori"></button>
-          <button class="edit" type="button" aria-label="Modifier"></button>
-        </div>
-      </article>
+      <div class="phrase-item">
+        <article class="phrase-card" draggable="true">
+          <button type="button" class="phrase-button"></button>
+          <div class="phrase-actions">
+            <button class="star" type="button" aria-label="Basculer en favori"></button>
+            <button class="edit" type="button" aria-label="Modifier"></button>
+          </div>
+        </article>
+        <p class="queue-indicator" hidden>MP3 en cours...</p>
+      </div>
     </template>
 
     <script type="module" src="./app.js"></script>
