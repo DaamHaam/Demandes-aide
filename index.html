@@ -14,7 +14,15 @@
   </head>
   <body>
     <header>
-      <div class="toolbar" role="toolbar" aria-label="Options d'affichage">
+      <div class="app-title">
+        <h1>Demandes rapides</h1>
+        <p>Exprimez les besoins essentiels en un tap, même hors-ligne.</p>
+      </div>
+      <div class="toolbar" role="toolbar" aria-label="Options de lecture">
+        <label class="range-field" for="volumeRange">
+          Volume
+          <input id="volumeRange" type="range" min="0" max="1" step="0.01" value="1" />
+        </label>
         <button id="favoritesToggle" class="toggle-button" type="button" aria-pressed="false">
           <span class="icon">★</span>
           Favoris d'abord
@@ -67,15 +75,11 @@
 
     <template id="phraseTemplate">
       <article class="phrase-card" draggable="true">
-        <div class="phrase-main">
-          <button type="button" class="phrase-button"></button>
-          <div class="phrase-actions">
-            <button class="star" type="button" aria-label="Basculer en favori"></button>
-            <button class="edit" type="button" aria-label="Modifier la demande"></button>
-            <button class="delete" type="button" aria-label="Supprimer la demande"></button>
-          </div>
+        <button type="button" class="phrase-button"></button>
+        <div class="phrase-actions">
+          <button class="star" type="button" aria-label="Basculer en favori"></button>
+          <button class="edit" type="button" aria-label="Modifier"></button>
         </div>
-        <p class="phrase-status" aria-live="polite"></p>
       </article>
     </template>
 

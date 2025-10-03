@@ -34,13 +34,35 @@ header {
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(209, 213, 219, 0.6);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.app-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.app-title h1 {
+  margin: 0;
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+}
+
+.app-title p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-soft);
 }
 
 .toolbar {
   display: flex;
-  justify-content: flex-start;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .toggle-button,
@@ -70,6 +92,19 @@ header {
   border-color: var(--accent);
 }
 
+.range-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: var(--text-soft);
+}
+
+.range-field input[type="range"] {
+  accent-color: var(--accent);
+  width: 160px;
+}
+
 main {
   flex: 1;
   padding: 18px 16px 120px;
@@ -82,16 +117,15 @@ main {
 }
 
 .phrase-card {
+  position: relative;
   background: var(--bg-card);
   border-radius: 20px;
-  padding: 16px;
+  padding: 6px;
   box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
   border: 2px solid transparent;
   transition: border-color 160ms ease, transform 140ms ease;
   min-height: 120px;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
 .phrase-card.drag-over-top {
@@ -111,15 +145,20 @@ main {
   box-shadow: 0 0 0 4px var(--accent-soft), var(--shadow-soft);
 }
 
-.phrase-card.no-audio {
-  border-style: dashed;
-  border-color: rgba(15, 23, 42, 0.18);
+.phrase-card.no-audio::after {
+  content: "MP3 indisponible";
+  position: absolute;
+  bottom: 10px;
+  right: 14px;
+  font-size: 0.7rem;
+  color: var(--text-soft);
+  background: rgba(12, 18, 34, 0.08);
+  padding: 2px 8px;
+  border-radius: 999px;
 }
 
-.phrase-main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.phrase-card.is-generating::after {
+  display: none;
 }
 
 .phrase-button {
@@ -127,32 +166,39 @@ main {
   border: none;
   background: transparent;
   color: inherit;
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   font-weight: 600;
-  padding: 0;
+  padding: 18px;
+  border-radius: 16px;
   text-align: left;
   cursor: pointer;
-  line-height: 1.3;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
 }
 
 .phrase-actions {
-  display: inline-flex;
-  gap: 8px;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 6px;
 }
 
 .phrase-actions button {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
   border: none;
-  background: rgba(31, 111, 235, 0.08);
+  background: rgba(255, 255, 255, 0.85);
   color: var(--text-soft);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
-  transition: transform 120ms ease, background 140ms ease, color 140ms ease;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+  transition: transform 120ms ease, background 140ms ease;
 }
 
 .phrase-actions button:hover {
@@ -161,35 +207,11 @@ main {
 }
 
 .phrase-actions button:active {
-  transform: scale(0.92);
+  transform: scale(0.9);
 }
 
-.phrase-actions .star.is-active {
+.star.is-active {
   color: #f7b500;
-}
-
-.phrase-actions .delete {
-  color: #ef4444;
-}
-
-.phrase-actions .delete:hover {
-  background: rgba(239, 68, 68, 0.12);
-  color: #dc2626;
-}
-
-.phrase-status {
-  margin: 0;
-  font-size: 0.75rem;
-  color: var(--text-soft);
-  min-height: 1em;
-}
-
-.phrase-card.is-generating .phrase-status {
-  color: var(--accent);
-}
-
-.phrase-card.no-audio .phrase-status {
-  color: var(--text-soft);
 }
 
 .add-button {
@@ -300,6 +322,37 @@ button.primary {
   color: #fff;
 }
 
+.queue-indicator {
+  position: absolute;
+  left: 16px;
+  bottom: 12px;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  background: rgba(15, 23, 42, 0.08);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.queue-indicator .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .empty-placeholder {
   margin-top: 80px;
   text-align: center;
@@ -345,17 +398,11 @@ button.primary {
     color: #cbd5f5;
   }
   .phrase-actions button:hover {
-    background: rgba(59, 130, 246, 0.24);
+    background: rgba(148, 163, 184, 0.14);
   }
-  .phrase-card.no-audio {
-    border-color: rgba(148, 163, 184, 0.45);
-  }
-  .phrase-actions .delete {
-    color: #fca5a5;
-  }
-  .phrase-actions .delete:hover {
-    background: rgba(248, 113, 113, 0.18);
-    color: #fecaca;
+  .phrase-card.no-audio::after {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-soft);
   }
   .add-button {
     box-shadow: 0 18px 32px rgba(56, 189, 248, 0.35);

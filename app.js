@@ -92,6 +92,7 @@ const grid = document.querySelector('#phraseGrid');
 const emptyState = document.querySelector('#emptyState');
 const addButton = document.querySelector('#addButton');
 const favoritesToggle = document.querySelector('#favoritesToggle');
+const volumeRange = document.querySelector('#volumeRange');
 const phraseTemplate = document.querySelector('#phraseTemplate');
 const dialog = document.querySelector('#phraseDialog');
 const dialogTitle = document.querySelector('#dialogTitle');
@@ -112,6 +113,14 @@ let isProcessingQueue = false;
 
 const audio = new Audio();
 audio.preload = 'auto';
+audio.volume = settings.volume ?? 1;
+volumeRange.value = String(audio.volume);
+
+volumeRange.addEventListener('input', () => {
+  audio.volume = Number(volumeRange.value);
+  settings.volume = audio.volume;
+  saveSettings(settings);
+});
 
 audio.addEventListener('ended', () => {
   if (currentPlayingId) {
@@ -239,24 +248,22 @@ function loadPhrases() {
 function loadSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);
   if (!raw) {
-    return { favoritesFirst: true };
+    return { favoritesFirst: true, volume: 1 };
   }
   try {
     const parsed = JSON.parse(raw);
     return {
-      favoritesFirst: parsed.favoritesFirst ?? true
+      favoritesFirst: parsed.favoritesFirst ?? true,
+      volume: typeof parsed.volume === 'number' ? parsed.volume : 1
     };
   } catch (error) {
     console.warn('Paramètres illisibles, utilisation des valeurs par défaut.', error);
-    return { favoritesFirst: true };
+    return { favoritesFirst: true, volume: 1 };
   }
 }
 
 function saveSettings(next) {
-  localStorage.setItem(
-    SETTINGS_KEY,
-    JSON.stringify({ favoritesFirst: Boolean(next.favoritesFirst) })
-  );
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
 }
 
 function loadQueue() {
@@ -336,9 +343,7 @@ function render() {
     button.addEventListener('click', () => handlePhraseTap(phrase.id));
 
     node.classList.toggle('is-pinned', Boolean(phrase.pinned));
-    const isQueued = generationQueue.includes(phrase.id);
-    node.classList.toggle('is-generating', isQueued);
-    node.classList.toggle('no-audio', !phrase.hasMp3 && !isQueued);
+    node.classList.toggle('no-audio', !phrase.hasMp3);
     if (phrase.id === currentPlayingId) {
       node.classList.add('is-playing');
     }
@@ -359,23 +364,21 @@ function render() {
       openDialog(phrase.id);
     });
 
-    const deleteButton = node.querySelector('.delete');
-    deleteButton.innerHTML = '🗑';
-    deleteButton.addEventListener('click', (event) => {
-      event.stopPropagation();
-      deletePhrase(phrase.id);
-    });
-
     node.addEventListener('dragstart', () => handleDragStart(phrase.id, node));
     node.addEventListener('dragend', () => handleDragEnd(node));
     node.addEventListener('dragover', (event) => handleDragOver(event, phrase.id));
     node.addEventListener('dragleave', () => node.classList.remove('drag-over-top'));
     node.addEventListener('drop', (event) => handleDrop(event, phrase.id));
 
-    const status = node.querySelector('.phrase-status');
-    const statusText = isQueued ? 'MP3 en cours…' : !phrase.hasMp3 ? 'MP3 indisponible' : '';
-    status.textContent = statusText;
-    status.hidden = statusText === '';
+    const isQueued = generationQueue.includes(phrase.id);
+    node.classList.toggle('is-generating', isQueued);
+
+    if (isQueued) {
+      const indicator = document.createElement('div');
+      indicator.className = 'queue-indicator';
+      indicator.innerHTML = '<span class="dot"></span> MP3 en cours...';
+      node.appendChild(indicator);
+    }
 
     grid.appendChild(node);
   }
@@ -424,37 +427,6 @@ function togglePinned(id) {
   if (!phrase) return;
   phrase.pinned = !phrase.pinned;
   savePhrases();
-  render();
-}
-
-function deletePhrase(id) {
-  const index = phrases.findIndex((item) => item.id === id);
-  if (index === -1) return;
-  const phrase = phrases[index];
-  const confirmed = window.confirm(`Supprimer "${phrase.label}" ?`);
-  if (!confirmed) return;
-
-  if (currentPlayingId === id) {
-    audio.pause();
-    toggleCardPlaying(id, false);
-    currentPlayingId = null;
-  }
-
-  const [removed] = phrases.splice(index, 1);
-  phrases.forEach((item, position) => {
-    item.sort_order = position + 1;
-  });
-  savePhrases();
-
-  generationQueue = generationQueue.filter((itemId) => itemId !== id);
-  saveQueue();
-
-  if (removed?.mp3Url) {
-    removeAudioFromCache(removed.mp3Url).catch((error) =>
-      console.warn('Suppression du MP3 impossible', error)
-    );
-  }
-
   render();
 }
 
