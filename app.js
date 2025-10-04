@@ -204,6 +204,7 @@ dialog.addEventListener('close', () => {
 
 render();
 registerServiceWorker();
+requestPersistentStorage();
 processAvailability();
 processQueue();
 
@@ -235,22 +236,26 @@ function loadPhrases() {
 function loadSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY);
   if (!raw) {
-    return { favoritesFirst: true, volume: 1 };
+    return { favoritesFirst: true };
   }
   try {
-    const parsed = JSON.parse(raw);
-    return {
-      favoritesFirst: parsed.favoritesFirst ?? true,
-      volume: typeof parsed.volume === 'number' ? parsed.volume : 1
+    const parsed = JSON.parse(raw) || {};
+    const next = {
+      favoritesFirst: parsed.favoritesFirst ?? true
     };
+    if (Object.prototype.hasOwnProperty.call(parsed, 'volume')) {
+      saveSettings(next);
+    }
+    return next;
   } catch (error) {
     console.warn('Paramètres illisibles, utilisation des valeurs par défaut.', error);
-    return { favoritesFirst: true, volume: 1 };
+    return { favoritesFirst: true };
   }
 }
 
 function saveSettings(next) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+  const payload = { favoritesFirst: Boolean(next.favoritesFirst) };
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
 }
 
 function loadQueue() {
@@ -629,4 +634,18 @@ function registerServiceWorker() {
       })
       .catch((error) => console.error('Service worker non disponible', error));
   });
+}
+
+async function requestPersistentStorage() {
+  if (!navigator.storage || typeof navigator.storage.persist !== 'function') {
+    return;
+  }
+  try {
+    const alreadyPersisted = await navigator.storage.persisted();
+    if (!alreadyPersisted) {
+      await navigator.storage.persist();
+    }
+  } catch (error) {
+    console.warn('Stockage persistant indisponible', error);
+  }
 }
