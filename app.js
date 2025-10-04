@@ -124,6 +124,7 @@ let settings = loadSettings();
 let generationQueue = loadQueue();
 let dragSourceId = null;
 let isProcessingQueue = false;
+let currentGenerationId = null;
 let activePhraseId = null;
 let playingPhraseId = null;
 
@@ -194,7 +195,8 @@ phraseForm.addEventListener('submit', (event) => {
       label,
       tts_text: tts,
       pinned,
-      sort_order
+      sort_order,
+      hasMp3: false
     };
     phrases.push(newPhrase);
     savePhrases();
@@ -429,8 +431,10 @@ function render() {
     button.textContent = phrase.label;
     button.addEventListener('click', () => handlePhraseTap(phrase.id));
 
+    const hasMp3 = phrase.hasMp3 === true;
+
     card.classList.toggle('is-pinned', Boolean(phrase.pinned));
-    card.classList.toggle('no-audio', !phrase.hasMp3);
+    card.classList.toggle('no-audio', !hasMp3);
     card.classList.toggle('is-active', phrase.id === activePhraseId);
 
     const starButton = card.querySelector('.star');
@@ -455,14 +459,21 @@ function render() {
     card.addEventListener('dragleave', () => card.classList.remove('drag-over-top'));
     card.addEventListener('drop', (event) => handleDrop(event, phrase.id));
 
-    const isQueued = generationQueue.includes(phrase.id);
-    card.classList.toggle('is-generating', isQueued);
+    const isActiveGeneration = phrase.id === currentGenerationId;
+    card.classList.toggle('is-generating', isActiveGeneration);
 
     const indicator = node.querySelector('.queue-indicator');
     if (indicator) {
-      indicator.hidden = !isQueued;
-      if (isQueued) {
-        indicator.innerHTML = '<span class="dot"></span> MP3 en cours...';
+      if (!hasMp3) {
+        indicator.hidden = false;
+        if (isActiveGeneration) {
+          indicator.innerHTML = '<span class="dot"></span> MP3 en cours...';
+        } else {
+          indicator.textContent = 'Pas de MP3';
+        }
+      } else {
+        indicator.hidden = true;
+        indicator.textContent = '';
       }
     }
 
@@ -648,21 +659,35 @@ async function processQueue() {
       if (!phrase) {
         generationQueue.shift();
         saveQueue();
+        currentGenerationId = null;
+        render();
         continue;
       }
+
+      currentGenerationId = id;
+      render();
+
+      let generationCompleted = false;
       try {
         await generateMp3ForPhrase(phrase);
         phrase.hasMp3 = true;
         savePhrases();
         generationQueue.shift();
         saveQueue();
-        render();
+        generationCompleted = true;
       } catch (error) {
         console.error('Génération impossible, nouvelle tentative plus tard.', error);
         await new Promise((resolve) => setTimeout(resolve, 5000));
       }
+
+      if (generationCompleted) {
+        currentGenerationId = null;
+        render();
+      }
     }
   } finally {
+    currentGenerationId = null;
+    render();
     isProcessingQueue = false;
   }
 }
