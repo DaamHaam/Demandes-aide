@@ -2,6 +2,12 @@
 
 Ce document suit les changements notables du projet. Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et respecte la numérotation sémantique.
 
+## [0.03] - 2025-10-04
+### Modifié
+- Retrait du badge "MP3 indisponible" sur les cartes pour éviter qu'il ne masque les actions disponibles.
+- Réduction des espacements verticaux entre les cartes et ajustement de l'indicateur MP3 pour une liste plus compacte.
+- Incrémentation du numéro de version affiché et du cache statique du service worker pour la publication 0.03.
+
 ## [0.02] - 2024-06-20
 ### Ajouté
 - Création du journal des modifications pour suivre l'évolution du projet.
