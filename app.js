@@ -113,7 +113,7 @@ let playingPhraseId = null;
 
 const audio = new Audio();
 audio.preload = 'auto';
-audio.volume = 1;
+audio.volume = settings.volume ?? 1;
 
 audio.addEventListener('ended', () => {
   playingPhraseId = null;
