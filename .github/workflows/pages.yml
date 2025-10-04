@@ -3,6 +3,8 @@ name: Pages (official - production)
 on:
   push:
     branches: [ main ]        # déploie la prod à chaque push sur main
+  pull_request:               # génère un aperçu pour chaque PR
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:          # déclenchement manuel si besoin
 
 permissions:
@@ -11,7 +13,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-${{ github.ref }}
+  group: pages-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -19,6 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Configurer GitHub Pages
+        uses: actions/configure-pages@v5
 
       # Désactiver Jekyll (important si un dossier commence par _)
       - run: echo > .nojekyll
@@ -34,9 +39,12 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          preview: ${{ github.event_name == 'pull_request' }}
