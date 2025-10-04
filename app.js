@@ -1,19 +1,35 @@
 const STORAGE_KEY = 'aac_phrases_v1';
 const SETTINGS_KEY = 'aac_settings_v1';
 const QUEUE_KEY = 'aac_generation_queue_v1';
+const VOICE_STORAGE_KEY = 'aac_voice_selection_v1';
+const VOICE_NAME_STORAGE_KEY = 'aac_voice_name_v1';
 const MP3_CACHE_NAME = 'aac-mp3-v1';
 
 // Configuration à remplacer par vos identifiants ElevenLabs.
 window.APP_CONFIG = window.APP_CONFIG || {
   tts: {
-    apiKey: '', // Renseignez votre clé API ElevenLabs
+    apiKey: 'sk_892bdd87082cf03206422f0fc0daf6db2255d4c9a00c0b6f', // Clé API ElevenLabs « Demandes JD »
     voiceId: '', // Identifiant de voix ElevenLabs
+    voiceName: 'Demandes JD',
     modelId: 'eleven_monolingual_v1',
     baseUrl: 'https://api.elevenlabs.io/v1',
     stability: 0.5,
     similarityBoost: 0.75
   }
 };
+
+try {
+  const savedVoiceId = localStorage.getItem(VOICE_STORAGE_KEY);
+  const savedVoiceName = localStorage.getItem(VOICE_NAME_STORAGE_KEY);
+  if (savedVoiceId && !window.APP_CONFIG.tts.voiceId) {
+    window.APP_CONFIG.tts.voiceId = savedVoiceId;
+  }
+  if (savedVoiceName && !window.APP_CONFIG.tts.voiceName) {
+    window.APP_CONFIG.tts.voiceName = savedVoiceName;
+  }
+} catch (error) {
+  console.warn('Stockage local indisponible pour la voix ElevenLabs.', error);
+}
 
 const DEFAULT_PHRASES = [
   {
@@ -205,8 +221,86 @@ dialog.addEventListener('close', () => {
 render();
 registerServiceWorker();
 requestPersistentStorage();
+initializeTtsConfiguration();
 processAvailability();
 processQueue();
+
+async function initializeTtsConfiguration() {
+  const { tts } = window.APP_CONFIG;
+  if (!tts || !tts.apiKey) {
+    return;
+  }
+
+  if (tts.voiceId) {
+    try {
+      localStorage.setItem(VOICE_STORAGE_KEY, tts.voiceId);
+      if (tts.voiceName) {
+        localStorage.setItem(VOICE_NAME_STORAGE_KEY, tts.voiceName);
+      }
+    } catch (error) {
+      console.warn('Impossible de mémoriser la voix ElevenLabs sélectionnée.', error);
+    }
+    processQueue();
+    return;
+  }
+
+  try {
+    const response = await fetch(`${tts.baseUrl}/voices`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'xi-api-key': tts.apiKey
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erreur ElevenLabs lors de la récupération des voix : ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const voices = Array.isArray(payload?.voices) ? payload.voices : [];
+    const preferredVoice = tts.voiceName
+      ? voices.find((voice) => voice?.name?.toLowerCase() === tts.voiceName.toLowerCase())
+      : undefined;
+    const selectedVoice = preferredVoice || voices[0];
+
+    if (!selectedVoice) {
+      console.warn('Aucune voix ElevenLabs disponible avec la clé fournie.');
+      return;
+    }
+
+    tts.voiceId = selectedVoice.voice_id;
+    tts.voiceName = selectedVoice.name || tts.voiceName;
+
+    let shouldSave = false;
+    for (const phrase of phrases) {
+      const nextUrl = buildMp3Url(phrase);
+      if (phrase.mp3Url !== nextUrl) {
+        phrase.mp3Url = nextUrl;
+        phrase.hasMp3 = false;
+        shouldSave = true;
+      }
+    }
+
+    if (shouldSave) {
+      savePhrases();
+      render();
+    }
+
+    try {
+      localStorage.setItem(VOICE_STORAGE_KEY, tts.voiceId);
+      if (tts.voiceName) {
+        localStorage.setItem(VOICE_NAME_STORAGE_KEY, tts.voiceName);
+      }
+    } catch (error) {
+      console.warn('Impossible d’enregistrer la voix ElevenLabs sélectionnée.', error);
+    }
+
+    processAvailability();
+    processQueue();
+  } catch (error) {
+    console.error('Initialisation ElevenLabs impossible.', error);
+  }
+}
 
 function isTtsConfigured() {
   const { tts } = window.APP_CONFIG;
