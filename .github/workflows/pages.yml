@@ -1,10 +1,14 @@
-name: Pages (official - production)
+name: Pages (official + PR previews)
 
 on:
   push:
-    branches: [ main ]        # déploie la prod à chaque push sur main
-  pull_request:               # génère un aperçu pour chaque PR
-  workflow_dispatch:          # déclenchement manuel si besoin
+    branches: [ main ]                 # prod = main
+  pull_request:                        # PR depuis le même dépôt
+    branches: [ main ]
+  pull_request_target:                 # PR depuis un fork (droits sur le dépôt cible)
+    types: [ opened, synchronize, reopened ]
+    branches: [ main ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -12,38 +16,119 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-${{ github.ref_name }}
+  group: github-pages
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configurer GitHub Pages
-        uses: actions/configure-pages@v5
-
-      # Désactiver Jekyll (important si un dossier commence par _)
-      - run: echo > .nojekyll
-
-      # Fallback SPA/PWA : 404.html = copie d'index.html
-      - run: cp -f index.html 404.html || true
-
-      # Empaqueter le site à publier (racine du repo)
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-
+  # --- Déploiement de production (push sur main) ---
   deploy:
-    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Mise en forme des fichiers à publier (dossier dist/)
+      - name: Prepare dist
+        run: |
+          set -e
+          rm -rf dist
+          mkdir -p dist
+          rsync -a --exclude .git --exclude .github --exclude dist --exclude node_modules ./ dist/
+          touch dist/.nojekyll
+          # Fallback SPA/PWA
+          if [ -f "dist/index.html" ]; then
+            cp -f dist/index.html dist/404.html || true
+          elif [ -f "index.html" ]; then
+            cp -f index.html dist/404.html || true
+          fi
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
       - id: deployment
+        name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+
+  # --- Previews pour PR créées depuis le même dépôt ---
+  preview-internal:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: preview
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout PR (same-repo)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Prepare dist (preview)
+        run: |
+          set -e
+          rm -rf dist
+          mkdir -p dist
+          rsync -a --exclude .git --exclude .github --exclude dist --exclude node_modules ./ dist/
+          touch dist/.nojekyll
+          if [ -f "dist/index.html" ]; then
+            cp -f dist/index.html dist/404.html || true
+          elif [ -f "index.html" ]; then
+            cp -f index.html dist/404.html || true
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+      - id: deployment
+        name: Deploy PR preview
         uses: actions/deploy-pages@v4
         with:
-          preview: ${{ github.event_name == 'pull_request' }}
+          preview: true
+
+  # --- Previews pour PR créées depuis un fork (safe) ---
+  preview-fork:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    environment:
+      name: preview
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # on déploie le contenu EXACT du fork, sans donner nos credentials au code du fork
+      - name: Checkout PR HEAD from fork (safe)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Prepare dist (preview fork)
+        run: |
+          set -e
+          rm -rf dist
+          mkdir -p dist
+          rsync -a --exclude .git --exclude .github --exclude dist --exclude node_modules ./ dist/
+          touch dist/.nojekyll
+          if [ -f "dist/index.html" ]; then
+            cp -f dist/index.html dist/404.html || true
+          elif [ -f "index.html" ]; then
+            cp -f index.html dist/404.html || true
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+      - id: deployment
+        name: Deploy PR preview (fork)
+        uses: actions/deploy-pages@v4
+        with:
+          preview: true
