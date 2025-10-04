@@ -84,13 +84,13 @@ main {
 .phrase-grid {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .phrase-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   width: 100%;
 }
 
@@ -286,9 +286,9 @@ button.primary {
 }
 
 .queue-indicator {
-  margin: 2px 0 0;
-  padding-left: 12px;
-  font-size: 0.5rem;
+  margin: 1px 0 0;
+  padding-left: 10px;
+  font-size: 0.48rem;
   line-height: 1.2;
   color: var(--text-soft);
 }
@@ -327,7 +327,7 @@ button.primary {
     font-size: 0.68rem;
   }
   .phrase-grid {
-    gap: 6px;
+    gap: 3px;
   }
   .phrase-button {
     font-size: 1.32rem;

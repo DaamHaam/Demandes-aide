@@ -2,6 +2,12 @@
 
 Ce document suit les changements notables du projet. Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et respecte la numérotation sémantique.
 
+## [0.04] - 2025-10-04
+### Modifié
+- Retrait définitif du badge « MP3 indisponible » en supprimant la classe appliquée côté JavaScript et en forçant un nouveau cache statique.
+- Espacement vertical réduit entre les cartes et leurs indicateurs pour limiter la zone grise visible.
+- Incrémentation de la version affichée à v0.04 et renommage du cache statique du service worker.
+
 ## [0.03] - 2025-10-04
 ### Modifié
 - Retrait du badge "MP3 indisponible" sur les cartes pour éviter qu'il ne masque les actions disponibles.
