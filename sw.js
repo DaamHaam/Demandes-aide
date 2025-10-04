@@ -1,5 +1,6 @@
-const STATIC_CACHE = 'aac-static-v1';
+const STATIC_CACHE = 'aac-static-v2';
 const MP3_CACHE = 'aac-mp3-v1';
+const MP3_CACHE_LIMIT = 30;
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -29,6 +30,8 @@ self.addEventListener('activate', (event) => {
             .map((key) => caches.delete(key))
         )
       )
+      .then(() => caches.open(MP3_CACHE))
+      .then((cache) => enforceCacheLimit(cache, MP3_CACHE_LIMIT))
       .then(() => self.clients.claim())
   );
 });
@@ -74,6 +77,9 @@ async function cacheFirst(request, cacheName) {
     const response = await fetch(request);
     if (response && response.status === 200) {
       cache.put(request, response.clone());
+      if (cacheName === MP3_CACHE) {
+        await enforceCacheLimit(cache, MP3_CACHE_LIMIT);
+      }
     }
     return response;
   } catch (error) {
@@ -101,4 +107,14 @@ async function networkFirst(request) {
     }
     throw error;
   }
+}
+
+async function enforceCacheLimit(cache, maxEntries) {
+  const keys = await cache.keys();
+  if (keys.length <= maxEntries) {
+    return;
+  }
+  const overflow = keys.length - maxEntries;
+  const staleKeys = keys.slice(0, overflow);
+  await Promise.all(staleKeys.map((request) => cache.delete(request)));
 }
