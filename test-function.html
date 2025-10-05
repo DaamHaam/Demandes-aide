@@ -1,0 +1,70 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Test generate-tts</title>
+<style>
+  body{font:16px/1.4 system-ui;margin:2rem;max-width:700px}
+  label{display:block;margin:.5rem 0 .25rem}
+  input,textarea,button{font:inherit;padding:.6rem;border:1px solid #ccc;border-radius:8px;width:100%}
+  button{cursor:pointer;background:#0d6efd;border-color:#0d6efd;color:#fff}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .log{white-space:pre-wrap;background:#f6f7f9;padding:8px;border-radius:8px;border:1px solid #e6e8eb}
+</style>
+
+<h1>Test Supabase Edge Function: generate-tts</h1>
+
+<label>Project ref (functions URL)</label>
+<input id="fn" value="https://YOUR_PROJECT_REF.functions.supabase.co/generate-tts">
+
+<label>Anon key (publique)</label>
+<input id="anon" value="YOUR_ANON_KEY">
+
+<div class="row">
+  <div>
+    <label>Texte</label>
+    <textarea id="text">Je voudrais boire.</textarea>
+  </div>
+  <div>
+    <label>Voice ID (ElevenLabs)</label>
+    <input id="voice" placeholder="ex: 21m00Tcm4TlvDq8ikWAM">
+  </div>
+</div>
+
+<button id="go">Générer et lire</button>
+
+<h3>Réponse</h3>
+<pre class="log" id="out"></pre>
+
+<audio id="player" controls></audio>
+
+<script>
+const $ = s => document.querySelector(s);
+$('#go').onclick = async () => {
+  const url = $('#fn').value.trim();
+  const anon = $('#anon').value.trim();
+  const text = $('#text').value.trim();
+  const voice = $('#voice').value.trim();
+  $('#out').textContent = 'Envoi...';
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + anon,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ text, lang: 'fr-FR', voice_id: voice })
+    });
+    const json = await res.json();
+    $('#out').textContent = JSON.stringify(json, null, 2);
+
+    if (res.ok && json.mp3_url) {
+      // lecture immédiate du MP3 retourné
+      const audio = document.getElementById('player');
+      audio.src = json.mp3_url;
+      audio.play().catch(()=>{});
+    }
+  } catch (e) {
+    $('#out').textContent = 'Erreur fetch: ' + e;
+  }
+};
+</script>
