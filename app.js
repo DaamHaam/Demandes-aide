@@ -434,7 +434,6 @@ function render() {
     const hasMp3 = phrase.hasMp3 === true;
 
     card.classList.toggle('is-pinned', Boolean(phrase.pinned));
-    card.classList.toggle('no-audio', !hasMp3);
     card.classList.toggle('is-active', phrase.id === activePhraseId);
 
     const starButton = card.querySelector('.star');

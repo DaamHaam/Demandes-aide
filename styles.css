@@ -84,13 +84,13 @@ main {
 .phrase-grid {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4px;
 }
 
 .phrase-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 1px;
   width: 100%;
 }
 
@@ -124,21 +124,6 @@ main {
   box-shadow: 0 0 0 4px var(--accent-soft), var(--shadow-soft);
 }
 
-.phrase-card.no-audio::after {
-  content: "MP3 indisponible";
-  position: absolute;
-  bottom: 10px;
-  right: 14px;
-  font-size: 0.7rem;
-  color: var(--text-soft);
-  background: rgba(12, 18, 34, 0.08);
-  padding: 2px 8px;
-  border-radius: 999px;
-}
-
-.phrase-card.is-generating::after {
-  display: none;
-}
 
 .phrase-button {
   flex: 1;
@@ -301,9 +286,10 @@ button.primary {
 }
 
 .queue-indicator {
-  margin: 0;
-  padding-left: 16px;
-  font-size: 0.58rem;
+  margin: 1px 0 0;
+  padding-left: 10px;
+  font-size: 0.48rem;
+  line-height: 1.2;
   color: var(--text-soft);
 }
 
@@ -341,7 +327,7 @@ button.primary {
     font-size: 0.68rem;
   }
   .phrase-grid {
-    gap: 10px;
+    gap: 3px;
   }
   .phrase-button {
     font-size: 1.32rem;
@@ -376,10 +362,6 @@ button.primary {
   }
   .phrase-actions button:hover {
     background: rgba(148, 163, 184, 0.14);
-  }
-  .phrase-card.no-audio::after {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-soft);
   }
   .add-button {
     box-shadow: 0 18px 32px rgba(56, 189, 248, 0.35);

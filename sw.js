@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'aac-static-v2';
+const STATIC_CACHE = 'aac-static-v4';
 const MP3_CACHE = 'aac-mp3-v1';
 const MP3_CACHE_LIMIT = 30;
 const STATIC_ASSETS = [
