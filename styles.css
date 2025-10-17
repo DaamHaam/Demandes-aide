@@ -30,23 +30,31 @@ header {
   position: sticky;
   top: 0;
   z-index: 10;
-  padding: 16px 20px;
+  padding: 12px 16px;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(209, 213, 219, 0.6);
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .header-actions {
-  display: flex;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
   align-items: center;
-  gap: 12px;
-  flex: 1;
-  flex-wrap: wrap;
+  gap: 10px;
+  padding: 4px;
+  margin: 0 -4px;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.header-actions::-webkit-scrollbar {
+  display: none;
 }
 
 .app-version {
@@ -54,6 +62,7 @@ header {
   font-weight: 600;
   color: var(--text-soft);
   letter-spacing: 0.08em;
+  justify-self: end;
 }
 
 .toggle-button,
@@ -63,14 +72,15 @@ header {
   background: rgba(31, 111, 235, 0.08);
   color: var(--accent);
   border-radius: 999px;
-  padding: 8px 14px;
-  font-size: 0.95rem;
+  padding: 6px 12px;
+  font-size: 0.85rem;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
   transition: transform 120ms ease, background 160ms ease;
+  white-space: nowrap;
 }
 
 .toggle-button:active,
@@ -337,10 +347,14 @@ button.primary {
 
 @media (max-width: 540px) {
   header {
-    padding: 14px 16px 22px;
+    grid-template-columns: 1fr;
+    padding: 12px 14px 18px;
   }
   .app-version {
     font-size: 0.68rem;
+  }
+  .header-actions {
+    justify-content: start;
   }
   .phrase-grid {
     gap: 3px;

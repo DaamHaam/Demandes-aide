@@ -2,6 +2,11 @@
 
 Ce document suit les changements notables du projet. Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et respecte la numérotation sémantique.
 
+## [0.07] - 2025-10-07
+### Modifié
+- Barre d'actions compacte en haut de l'écran avec des boutons plus courts et un défilement horizontal pour éviter les empilements.
+- Réduction des marges du bandeau supérieur afin de libérer de l'espace utile pour les cartes.
+
 ## [0.06] - 2025-10-06
 ### Modifié
 - Réorganisation des commandes principales en haut de l'écran avec un bouton « Mode édition » et le raccourci « Nouvelle demande ».
