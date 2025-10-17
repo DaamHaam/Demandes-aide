@@ -35,42 +35,54 @@ const DEFAULT_PHRASES = [
   {
     id: 'phrase-toilettes',
     label: 'Aller aux toilettes',
-    tts_text: 'Je voudrais aller aux toilettes, s’il vous plaît.',
+    tts_text: 'Je voudrais aller aux toilettes.',
+    localAudio: './audio/aller-aux-toilettes.mp3',
+    hasMp3: true,
     pinned: true,
     sort_order: 1
   },
   {
     id: 'phrase-boire',
     label: 'Boire',
-    tts_text: 'Je voudrais boire, s’il vous plaît.',
+    tts_text: 'Je voudrais boire.',
+    localAudio: './audio/boire.mp3',
+    hasMp3: true,
     pinned: true,
     sort_order: 2
   },
   {
     id: 'phrase-manger',
     label: 'Manger',
-    tts_text: 'Je voudrais manger, s’il vous plaît.',
+    tts_text: 'Je voudrais manger.',
+    localAudio: './audio/manger.mp3',
+    hasMp3: true,
     pinned: false,
     sort_order: 3
   },
   {
     id: 'phrase-medicaments',
     label: 'Mes médicaments',
-    tts_text: 'J’ai besoin de mes médicaments, s’il vous plaît.',
+    tts_text: 'Je voudrais mes médicaments.',
+    localAudio: './audio/mes-medicaments.mp3',
+    hasMp3: true,
     pinned: false,
     sort_order: 4
   },
   {
     id: 'phrase-tele',
     label: 'Allumer la télé',
-    tts_text: 'Pouvez-vous allumer la télévision, s’il vous plaît ?',
+    tts_text: 'Je voudrais allumer la télé.',
+    localAudio: './audio/allumer-la-tele.mp3',
+    hasMp3: true,
     pinned: false,
     sort_order: 5
   },
   {
     id: 'phrase-descendre',
     label: 'Descendre',
-    tts_text: 'J’aimerais descendre, s’il vous plaît.',
+    tts_text: 'Je voudrais descendre.',
+    localAudio: './audio/descendre.mp3',
+    hasMp3: true,
     pinned: false,
     sort_order: 6
   },
@@ -78,6 +90,8 @@ const DEFAULT_PHRASES = [
     id: 'phrase-jardin',
     label: 'Aller dans le jardin',
     tts_text: 'Je voudrais aller dans le jardin.',
+    localAudio: './audio/aller-dans-le-jardin.mp3',
+    hasMp3: true,
     pinned: false,
     sort_order: 7
   },
@@ -85,24 +99,53 @@ const DEFAULT_PHRASES = [
     id: 'phrase-coucher',
     label: 'Me coucher',
     tts_text: 'Je voudrais me coucher.',
+    localAudio: './audio/me-coucher.mp3',
+    hasMp3: true,
     pinned: false,
     sort_order: 8
   },
   {
     id: 'phrase-douleur',
     label: 'Douleur',
-    tts_text: 'J’ai mal, j’ai une douleur.',
+    tts_text: 'J’ai mal.',
+    localAudio: './audio/jai-mal.mp3',
+    hasMp3: true,
     pinned: true,
     sort_order: 9
   },
   {
     id: 'phrase-incliner-fauteuil',
     label: 'Incliner mon fauteuil',
-    tts_text: 'Pouvez-vous incliner mon fauteuil, s’il vous plaît ?',
+    tts_text: 'Pouvez-vous incliner mon fauteuil ?',
+    localAudio: './audio/incliner-mon-fauteuil.mp3',
+    hasMp3: true,
     pinned: false,
     sort_order: 10
+  },
+  {
+    id: 'phrase-mouchoir',
+    label: 'Un mouchoir',
+    tts_text: 'Je voudrais un mouchoir.',
+    localAudio: './audio/un-mouchoir.mp3',
+    hasMp3: true,
+    pinned: false,
+    sort_order: 11
   }
 ];
+
+function isLocalAudio(phrase) {
+  return Boolean(phrase?.localAudio);
+}
+
+function getPhraseAudioUrl(phrase) {
+  if (!phrase) {
+    return '';
+  }
+  if (isLocalAudio(phrase)) {
+    return phrase.localAudio;
+  }
+  return phrase.mp3Url || '';
+}
 
 const grid = document.querySelector('#phraseGrid');
 const emptyState = document.querySelector('#emptyState');
@@ -180,7 +223,11 @@ phraseForm.addEventListener('submit', (event) => {
     phrase.tts_text = tts;
     phrase.pinned = pinned;
     if (textChanged || regenerate) {
-      removeAudioFromCache(previousUrl).catch((error) => console.warn('Suppression MP3 impossible', error));
+      if (isLocalAudio(phrase)) {
+        phrase.localAudio = undefined;
+      } else {
+        removeAudioFromCache(previousUrl).catch((error) => console.warn('Suppression MP3 impossible', error));
+      }
       phrase.mp3Url = undefined;
       phrase.hasMp3 = false;
       enqueueGeneration(id, { force: true });
@@ -275,6 +322,9 @@ async function initializeTtsConfiguration() {
 
     let shouldSave = false;
     for (const phrase of phrases) {
+      if (isLocalAudio(phrase)) {
+        continue;
+      }
       const nextUrl = buildMp3Url(phrase);
       if (phrase.mp3Url !== nextUrl) {
         phrase.mp3Url = nextUrl;
@@ -310,22 +360,61 @@ function isTtsConfigured() {
 }
 
 function loadPhrases() {
+  const applyLocalAudioDefaults = (phrase) => {
+    if (isLocalAudio(phrase)) {
+      return {
+        ...phrase,
+        hasMp3: true,
+        mp3Url: phrase.localAudio
+      };
+    }
+    return phrase;
+  };
+
+  const cloneDefaults = () => DEFAULT_PHRASES.map((phrase) => applyLocalAudioDefaults({ ...phrase }));
+
+  const mergeWithDefaults = (list) => {
+    const map = new Map();
+    list.forEach((item, index) => {
+      const withOrder = {
+        ...item,
+        sort_order: item.sort_order ?? index + 1
+      };
+      map.set(withOrder.id, applyLocalAudioDefaults(withOrder));
+    });
+
+    for (const defaultPhrase of DEFAULT_PHRASES) {
+      if (map.has(defaultPhrase.id)) {
+        const existing = map.get(defaultPhrase.id);
+        if (isLocalAudio(defaultPhrase)) {
+          existing.localAudio = defaultPhrase.localAudio;
+          existing.hasMp3 = true;
+          existing.mp3Url = defaultPhrase.localAudio;
+        }
+        if (typeof existing.sort_order !== 'number' && typeof defaultPhrase.sort_order === 'number') {
+          existing.sort_order = defaultPhrase.sort_order;
+        }
+      } else {
+        map.set(defaultPhrase.id, applyLocalAudioDefaults({ ...defaultPhrase }));
+      }
+    }
+
+    return Array.from(map.values()).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  };
+
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) {
-    return DEFAULT_PHRASES.map((phrase) => ({ ...phrase }));
+    return cloneDefaults();
   }
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed) || parsed.length === 0) {
-      return DEFAULT_PHRASES.map((phrase) => ({ ...phrase }));
+      return cloneDefaults();
     }
-    return parsed.map((phrase, index) => ({
-      ...phrase,
-      sort_order: phrase.sort_order ?? index + 1
-    }));
+    return mergeWithDefaults(parsed);
   } catch (error) {
     console.warn('Impossible de lire les phrases stockées, retour aux valeurs par défaut.', error);
-    return DEFAULT_PHRASES.map((phrase) => ({ ...phrase }));
+    return cloneDefaults();
   }
 }
 
@@ -431,7 +520,7 @@ function render() {
     button.textContent = phrase.label;
     button.addEventListener('click', () => handlePhraseTap(phrase.id));
 
-    const hasMp3 = phrase.hasMp3 === true;
+    const hasMp3 = phrase.hasMp3 === true || isLocalAudio(phrase);
 
     card.classList.toggle('is-pinned', Boolean(phrase.pinned));
     card.classList.toggle('is-active', phrase.id === activePhraseId);
@@ -491,23 +580,28 @@ async function handlePhraseTap(id) {
     audio.currentTime = 0;
   }
 
-  if (phrase.hasMp3 && phrase.mp3Url) {
+  const audioUrl = getPhraseAudioUrl(phrase);
+  const canPlayCachedAudio = Boolean(audioUrl) && (phrase.hasMp3 || isLocalAudio(phrase));
+
+  if (canPlayCachedAudio) {
     try {
-      audio.src = phrase.mp3Url;
+      audio.src = audioUrl;
       playingPhraseId = id;
       await audio.play();
       return;
     } catch (error) {
       console.warn('Lecture impossible, suppression du marquage MP3.', error);
-      phrase.hasMp3 = false;
-      savePhrases();
-      render();
+      if (!isLocalAudio(phrase)) {
+        phrase.hasMp3 = false;
+        savePhrases();
+        render();
+      }
     }
   }
 
   playingPhraseId = null;
 
-  if (!phrase.hasMp3) {
+  if (!isLocalAudio(phrase) && !phrase.hasMp3) {
     enqueueGeneration(id);
   }
 }
@@ -604,6 +698,15 @@ function enqueueGeneration(id, options = {}) {
   if (!phrase) return;
   if (!phrase.tts_text) return;
 
+  if (isLocalAudio(phrase)) {
+    phrase.hasMp3 = true;
+    if (!phrase.mp3Url) {
+      phrase.mp3Url = phrase.localAudio;
+      savePhrases();
+    }
+    return;
+  }
+
   if (!phrase.mp3Url || force) {
     phrase.mp3Url = buildMp3Url(phrase);
     savePhrases();
@@ -624,12 +727,33 @@ function enqueueGeneration(id, options = {}) {
 }
 
 async function processAvailability() {
+  let updated = false;
+  for (const phrase of phrases) {
+    if (isLocalAudio(phrase)) {
+      if (!phrase.hasMp3) {
+        phrase.hasMp3 = true;
+        updated = true;
+      }
+      if (!phrase.mp3Url) {
+        phrase.mp3Url = phrase.localAudio;
+        updated = true;
+      }
+    }
+  }
+
   if (!('caches' in window)) {
+    if (updated) {
+      savePhrases();
+      render();
+    }
     return;
   }
   const cache = await caches.open(MP3_CACHE_NAME);
   await Promise.all(
     phrases.map(async (phrase) => {
+      if (isLocalAudio(phrase)) {
+        return;
+      }
       if (!phrase.tts_text) return;
       if (!phrase.mp3Url) {
         phrase.mp3Url = buildMp3Url(phrase);
@@ -656,6 +780,15 @@ async function processQueue() {
       const id = generationQueue[0];
       const phrase = phrases.find((item) => item.id === id);
       if (!phrase) {
+        generationQueue.shift();
+        saveQueue();
+        currentGenerationId = null;
+        render();
+        continue;
+      }
+
+      if (isLocalAudio(phrase)) {
+        phrase.hasMp3 = true;
         generationQueue.shift();
         saveQueue();
         currentGenerationId = null;

@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'aac-static-v4';
+const STATIC_CACHE = 'aac-static-v5';
 const MP3_CACHE = 'aac-mp3-v1';
 const MP3_CACHE_LIMIT = 30;
 const STATIC_ASSETS = [
@@ -9,7 +9,18 @@ const STATIC_ASSETS = [
   './manifest.webmanifest',
   './offline.html',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './audio/aller-aux-toilettes.mp3',
+  './audio/boire.mp3',
+  './audio/manger.mp3',
+  './audio/mes-medicaments.mp3',
+  './audio/allumer-la-tele.mp3',
+  './audio/descendre.mp3',
+  './audio/aller-dans-le-jardin.mp3',
+  './audio/me-coucher.mp3',
+  './audio/jai-mal.mp3',
+  './audio/incliner-mon-fauteuil.mp3',
+  './audio/un-mouchoir.mp3'
 ];
 
 self.addEventListener('install', (event) => {

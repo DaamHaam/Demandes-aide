@@ -2,6 +2,13 @@
 
 Ce document suit les changements notables du projet. Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et respecte la numérotation sémantique.
 
+## [0.05] - 2025-10-05
+### Ajouté
+- Intégration des enregistrements audio fournis pour toutes les demandes par défaut, avec une nouvelle carte « Un mouchoir ».
+
+### Modifié
+- Mise à jour du service worker pour mettre en cache les fichiers audio locaux et diffusion de la version v0.05 de l'application.
+
 ## [0.04] - 2025-10-04
 ### Modifié
 - Retrait définitif du badge « MP3 indisponible » en supprimant la classe appliquée côté JavaScript et en forçant un nouveau cache statique.
