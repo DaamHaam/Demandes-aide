@@ -544,37 +544,39 @@ function render() {
 
     const actions = card.querySelector('.phrase-actions');
     const pinnedIndicator = actions.querySelector('.pinned-indicator');
-    const starButton = actions.querySelector('.star');
-    const editButton = actions.querySelector('.edit');
+    const previousButtons = actions.querySelectorAll('button');
+    previousButtons.forEach((button) => button.remove());
 
     if (pinnedIndicator) {
       pinnedIndicator.textContent = phrase.pinned ? '★' : '';
       pinnedIndicator.classList.toggle('is-visible', Boolean(phrase.pinned) && !isEditMode);
     }
 
-    const newStarButton = starButton.cloneNode(true);
-    newStarButton.hidden = !isEditMode;
-    newStarButton.innerHTML = phrase.pinned ? '★' : '☆';
-    newStarButton.classList.toggle('is-active', Boolean(phrase.pinned));
-    newStarButton.setAttribute('aria-pressed', phrase.pinned ? 'true' : 'false');
     if (isEditMode) {
-      newStarButton.addEventListener('click', (event) => {
+      const starButton = document.createElement('button');
+      starButton.type = 'button';
+      starButton.className = 'star';
+      starButton.innerHTML = phrase.pinned ? '★' : '☆';
+      starButton.classList.toggle('is-active', Boolean(phrase.pinned));
+      starButton.setAttribute('aria-label', 'Basculer en favori');
+      starButton.setAttribute('aria-pressed', phrase.pinned ? 'true' : 'false');
+      starButton.addEventListener('click', (event) => {
         event.stopPropagation();
         togglePinned(phrase.id);
       });
-    }
-    starButton.replaceWith(newStarButton);
 
-    const newEditButton = editButton.cloneNode(true);
-    newEditButton.hidden = !isEditMode;
-    newEditButton.innerHTML = '✎';
-    if (isEditMode) {
-      newEditButton.addEventListener('click', (event) => {
+      const editButton = document.createElement('button');
+      editButton.type = 'button';
+      editButton.className = 'edit';
+      editButton.innerHTML = '✎';
+      editButton.setAttribute('aria-label', 'Modifier');
+      editButton.addEventListener('click', (event) => {
         event.stopPropagation();
         openDialog(phrase.id);
       });
+
+      actions.append(starButton, editButton);
     }
-    editButton.replaceWith(newEditButton);
 
     card.addEventListener('dragstart', () => handleDragStart(phrase.id, card));
     card.addEventListener('dragend', () => handleDragEnd(card));
