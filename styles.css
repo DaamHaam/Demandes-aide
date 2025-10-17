@@ -30,15 +30,23 @@ header {
   position: sticky;
   top: 0;
   z-index: 10;
-  padding: 16px;
-  padding-right: 72px;
+  padding: 16px 20px;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(209, 213, 219, 0.6);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
   gap: 12px;
+  flex: 1;
+  flex-wrap: wrap;
 }
 
 .app-version {
@@ -49,7 +57,8 @@ header {
 }
 
 .toggle-button,
-.icon-button {
+.icon-button,
+.primary-button {
   border: 1px solid rgba(31, 111, 235, 0.2);
   background: rgba(31, 111, 235, 0.08);
   color: var(--accent);
@@ -65,7 +74,8 @@ header {
 }
 
 .toggle-button:active,
-.icon-button:active {
+.icon-button:active,
+.primary-button:active {
   transform: scale(0.97);
 }
 
@@ -75,9 +85,22 @@ header {
   border-color: var(--accent);
 }
 
+.icon-button.is-active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.primary-button {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 16px 28px rgba(31, 111, 235, 0.18);
+}
+
 main {
   flex: 1;
-  padding: 16px 14px 120px;
+  padding: 16px 20px 48px;
 }
 
 
@@ -144,15 +167,29 @@ main {
 
 .phrase-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   margin-left: auto;
   align-items: center;
 }
 
+.pinned-indicator {
+  display: none;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: #f7b500;
+}
+
+.pinned-indicator.is-visible {
+  display: inline-flex;
+}
+
 .phrase-actions button {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
   border: none;
   background: rgba(255, 255, 255, 0.85);
   color: var(--text-soft);
@@ -162,6 +199,7 @@ main {
   cursor: pointer;
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
   transition: transform 120ms ease, background 140ms ease;
+  font-size: 1.35rem;
 }
 
 .phrase-actions button:hover {
@@ -175,28 +213,6 @@ main {
 
 .star.is-active {
   color: #f7b500;
-}
-
-.add-button {
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-  border-radius: 999px;
-  padding: 14px 18px;
-  background: var(--accent);
-  color: #fff;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 1rem;
-  font-weight: 600;
-  border: none;
-  box-shadow: 0 20px 30px rgba(31, 111, 235, 0.24);
-  cursor: pointer;
-}
-
-.add-button:active {
-  transform: scale(0.95);
 }
 
 .dialog-form {

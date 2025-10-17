@@ -14,11 +14,21 @@
   </head>
   <body>
     <header>
-      <button id="favoritesToggle" class="toggle-button" type="button" aria-pressed="false">
-        <span class="icon">★</span>
-        Favoris d'abord
-      </button>
-      <span class="app-version" aria-label="Version de l'application">v0.05</span>
+      <div class="header-actions">
+        <button id="favoritesToggle" class="toggle-button" type="button" aria-pressed="false">
+          <span class="icon">★</span>
+          Favoris d'abord
+        </button>
+        <button id="editToggle" class="icon-button" type="button" aria-pressed="false">
+          <span class="icon" aria-hidden="true">✎</span>
+          Mode édition
+        </button>
+        <button id="addButton" class="primary-button" type="button">
+          <span aria-hidden="true">＋</span>
+          Nouvelle demande
+        </button>
+      </div>
+      <span class="app-version" aria-label="Version de l'application">v0.06</span>
     </header>
 
     <main>
@@ -27,11 +37,6 @@
         Ajoutez votre première demande pour commencer.
       </p>
     </main>
-
-    <button id="addButton" class="add-button" type="button">
-      <span aria-hidden="true">＋</span>
-      Nouvelle demande
-    </button>
 
     <dialog id="phraseDialog" class="dialog-form">
       <form method="dialog" id="phraseForm">
@@ -69,6 +74,7 @@
         <article class="phrase-card" draggable="true">
           <button type="button" class="phrase-button"></button>
           <div class="phrase-actions">
+            <span class="pinned-indicator" aria-hidden="true"></span>
             <button class="star" type="button" aria-label="Basculer en favori"></button>
             <button class="edit" type="button" aria-label="Modifier"></button>
           </div>

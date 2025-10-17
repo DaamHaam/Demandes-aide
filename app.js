@@ -150,6 +150,7 @@ function getPhraseAudioUrl(phrase) {
 const grid = document.querySelector('#phraseGrid');
 const emptyState = document.querySelector('#emptyState');
 const addButton = document.querySelector('#addButton');
+const editToggle = document.querySelector('#editToggle');
 const favoritesToggle = document.querySelector('#favoritesToggle');
 const phraseTemplate = document.querySelector('#phraseTemplate');
 const dialog = document.querySelector('#phraseDialog');
@@ -170,6 +171,11 @@ let isProcessingQueue = false;
 let currentGenerationId = null;
 let activePhraseId = null;
 let playingPhraseId = null;
+let isEditMode = false;
+
+if (!editToggle) {
+  throw new Error('Le bouton « Mode édition » est introuvable dans le DOM.');
+}
 
 const audio = new Audio();
 audio.preload = 'auto';
@@ -198,6 +204,13 @@ favoritesToggle.addEventListener('click', () => {
 
 addButton.addEventListener('click', () => openDialog());
 cancelDialog.addEventListener('click', () => closeDialog());
+
+editToggle.addEventListener('click', () => {
+  isEditMode = !isEditMode;
+  editToggle.setAttribute('aria-pressed', isEditMode ? 'true' : 'false');
+  editToggle.classList.toggle('is-active', isEditMode);
+  render();
+});
 
 phraseForm.addEventListener('submit', (event) => {
   event.preventDefault();
@@ -492,6 +505,9 @@ function closeDialog() {
 }
 
 function render() {
+  editToggle.setAttribute('aria-pressed', isEditMode ? 'true' : 'false');
+  editToggle.classList.toggle('is-active', isEditMode);
+
   const sorted = phrases
     .slice()
     .sort((a, b) => {
@@ -516,6 +532,7 @@ function render() {
     const node = phraseTemplate.content.firstElementChild.cloneNode(true);
     const card = node.querySelector('.phrase-card');
     card.dataset.id = phrase.id;
+    card.classList.toggle('is-editing', isEditMode);
     const button = card.querySelector('.phrase-button');
     button.textContent = phrase.label;
     button.addEventListener('click', () => handlePhraseTap(phrase.id));
@@ -525,21 +542,39 @@ function render() {
     card.classList.toggle('is-pinned', Boolean(phrase.pinned));
     card.classList.toggle('is-active', phrase.id === activePhraseId);
 
-    const starButton = card.querySelector('.star');
-    starButton.innerHTML = phrase.pinned ? '★' : '☆';
-    starButton.classList.toggle('is-active', Boolean(phrase.pinned));
-    starButton.setAttribute('aria-pressed', phrase.pinned ? 'true' : 'false');
-    starButton.addEventListener('click', (event) => {
-      event.stopPropagation();
-      togglePinned(phrase.id);
-    });
+    const actions = card.querySelector('.phrase-actions');
+    const pinnedIndicator = actions.querySelector('.pinned-indicator');
+    const starButton = actions.querySelector('.star');
+    const editButton = actions.querySelector('.edit');
 
-    const editButton = card.querySelector('.edit');
-    editButton.innerHTML = '✎';
-    editButton.addEventListener('click', (event) => {
-      event.stopPropagation();
-      openDialog(phrase.id);
-    });
+    if (pinnedIndicator) {
+      pinnedIndicator.textContent = phrase.pinned ? '★' : '';
+      pinnedIndicator.classList.toggle('is-visible', Boolean(phrase.pinned) && !isEditMode);
+    }
+
+    const newStarButton = starButton.cloneNode(true);
+    newStarButton.hidden = !isEditMode;
+    newStarButton.innerHTML = phrase.pinned ? '★' : '☆';
+    newStarButton.classList.toggle('is-active', Boolean(phrase.pinned));
+    newStarButton.setAttribute('aria-pressed', phrase.pinned ? 'true' : 'false');
+    if (isEditMode) {
+      newStarButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        togglePinned(phrase.id);
+      });
+    }
+    starButton.replaceWith(newStarButton);
+
+    const newEditButton = editButton.cloneNode(true);
+    newEditButton.hidden = !isEditMode;
+    newEditButton.innerHTML = '✎';
+    if (isEditMode) {
+      newEditButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        openDialog(phrase.id);
+      });
+    }
+    editButton.replaceWith(newEditButton);
 
     card.addEventListener('dragstart', () => handleDragStart(phrase.id, card));
     card.addEventListener('dragend', () => handleDragEnd(card));
@@ -550,18 +585,18 @@ function render() {
     const isActiveGeneration = phrase.id === currentGenerationId;
     card.classList.toggle('is-generating', isActiveGeneration);
 
-    const indicator = node.querySelector('.queue-indicator');
-    if (indicator) {
+    const queueIndicator = node.querySelector('.queue-indicator');
+    if (queueIndicator) {
       if (!hasMp3) {
-        indicator.hidden = false;
+        queueIndicator.hidden = false;
         if (isActiveGeneration) {
-          indicator.innerHTML = '<span class="dot"></span> MP3 en cours...';
+          queueIndicator.innerHTML = '<span class="dot"></span> MP3 en cours...';
         } else {
-          indicator.textContent = 'Pas de MP3';
+          queueIndicator.textContent = 'Pas de MP3';
         }
       } else {
-        indicator.hidden = true;
-        indicator.textContent = '';
+        queueIndicator.hidden = true;
+        queueIndicator.textContent = '';
       }
     }
 

@@ -2,6 +2,12 @@
 
 Ce document suit les changements notables du projet. Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et respecte la numérotation sémantique.
 
+## [0.06] - 2025-10-06
+### Modifié
+- Réorganisation des commandes principales en haut de l'écran avec un bouton « Mode édition » et le raccourci « Nouvelle demande ».
+- Masquage des actions étoile et crayon hors mode édition tout en conservant un indicateur étoilé pour les favoris.
+- Agrandissement des icônes d'édition et de favoris pour faciliter la sélection tactile et mise à jour du cache statique.
+
 ## [0.05] - 2025-10-05
 ### Ajouté
 - Intégration des enregistrements audio fournis pour toutes les demandes par défaut, avec une nouvelle carte « Un mouchoir ».
