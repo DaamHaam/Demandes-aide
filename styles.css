@@ -30,26 +30,23 @@ header {
   position: sticky;
   top: 0;
   z-index: 10;
-  padding: 12px 16px;
+  padding: 10px 14px;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(209, 213, 219, 0.6);
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .header-actions {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: max-content;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
   align-items: center;
-  gap: 10px;
-  padding: 4px;
-  margin: 0 -4px;
-  max-width: 100%;
+  width: 100%;
   overflow-x: auto;
+  padding: 0 2px;
   scrollbar-width: none;
 }
 
@@ -58,54 +55,59 @@ header {
 }
 
 .app-version {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 600;
   color: var(--text-soft);
   letter-spacing: 0.08em;
-  justify-self: end;
+  align-self: flex-end;
 }
 
-.toggle-button,
-.icon-button,
-.primary-button {
-  border: 1px solid rgba(31, 111, 235, 0.2);
+.toolbar-button {
+  border: 1px solid rgba(31, 111, 235, 0.18);
   background: rgba(31, 111, 235, 0.08);
   color: var(--accent);
   border-radius: 999px;
   padding: 6px 12px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  transition: transform 120ms ease, background 160ms ease;
+  transition: transform 120ms ease, background 160ms ease, color 160ms ease;
   white-space: nowrap;
+  line-height: 1;
 }
 
-.toggle-button:active,
-.icon-button:active,
-.primary-button:active {
-  transform: scale(0.97);
+.toolbar-button .icon {
+  font-size: 1rem;
 }
 
-.toggle-button.is-active {
+.toolbar-button.icon-only {
+  padding: 6px 9px;
+  width: 40px;
+  justify-content: center;
+}
+
+.toolbar-button.icon-only .icon {
+  font-size: 1.2rem;
+}
+
+.toolbar-button:active {
+  transform: scale(0.95);
+}
+
+.toolbar-button.is-active {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
 }
 
-.icon-button.is-active {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-}
-
-.primary-button {
+.toolbar-button.primary {
   background: var(--accent);
   color: #fff;
   border-color: transparent;
-  box-shadow: 0 16px 28px rgba(31, 111, 235, 0.18);
+  box-shadow: 0 12px 22px rgba(31, 111, 235, 0.18);
 }
 
 main {
@@ -347,14 +349,23 @@ button.primary {
 
 @media (max-width: 540px) {
   header {
-    grid-template-columns: 1fr;
-    padding: 12px 14px 18px;
+    padding: 9px 10px;
+    gap: 4px;
   }
   .app-version {
-    font-size: 0.68rem;
+    font-size: 0.62rem;
   }
   .header-actions {
-    justify-content: start;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  .toolbar-button {
+    font-size: 0.75rem;
+    padding: 6px 10px;
+  }
+  .toolbar-button.icon-only {
+    width: 36px;
+    padding: 6px 8px;
   }
   .phrase-grid {
     gap: 3px;

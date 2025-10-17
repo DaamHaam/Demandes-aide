@@ -2,6 +2,12 @@
 
 Ce document suit les changements notables du projet. Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et respecte la numérotation sémantique.
 
+## [0.08] - 2025-10-08
+### Modifié
+- Raccourcissement du bandeau supérieur avec l'affichage discret de la version et des boutons réduits alignés à l'horizontale.
+- Remplacement des libellés par des icônes sur les commandes « Mode édition » et « Nouvelle demande » pour limiter la place occupée.
+- Conservation d'un bouton « Favoris » textuel pour rappeler le tri tout en réduisant la largeur nécessaire.
+
 ## [0.07] - 2025-10-07
 ### Modifié
 - Barre d'actions compacte en haut de l'écran avec des boutons plus courts et un défilement horizontal pour éviter les empilements.

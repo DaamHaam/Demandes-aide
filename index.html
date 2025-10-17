@@ -14,21 +14,30 @@
   </head>
   <body>
     <header>
+      <span class="app-version" aria-label="Version de l'application">v0.08</span>
       <div class="header-actions">
-        <button id="favoritesToggle" class="toggle-button" type="button" aria-pressed="false">
-          <span class="icon">★</span>
-          Favoris d'abord
+        <button id="favoritesToggle" class="toolbar-button" type="button" aria-pressed="false">
+          <span class="icon" aria-hidden="true">★</span>
+          <span class="label">Favoris</span>
         </button>
-        <button id="editToggle" class="icon-button" type="button" aria-pressed="false">
+        <button
+          id="editToggle"
+          class="toolbar-button icon-only"
+          type="button"
+          aria-label="Activer le mode édition"
+          aria-pressed="false"
+        >
           <span class="icon" aria-hidden="true">✎</span>
-          Mode édition
         </button>
-        <button id="addButton" class="primary-button" type="button">
-          <span aria-hidden="true">＋</span>
-          Nouvelle demande
+        <button
+          id="addButton"
+          class="toolbar-button primary icon-only"
+          type="button"
+          aria-label="Créer une nouvelle demande"
+        >
+          <span class="icon" aria-hidden="true">＋</span>
         </button>
       </div>
-      <span class="app-version" aria-label="Version de l'application">v0.07</span>
     </header>
 
     <main>
