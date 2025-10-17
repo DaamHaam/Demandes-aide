@@ -2,6 +2,30 @@
 
 Ce document suit les changements notables du projet. Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et respecte la numérotation sémantique.
 
+## [0.08] - 2025-10-08
+### Modifié
+- Raccourcissement du bandeau supérieur avec l'affichage discret de la version et des boutons réduits alignés à l'horizontale.
+- Remplacement des libellés par des icônes sur les commandes « Mode édition » et « Nouvelle demande » pour limiter la place occupée.
+- Conservation d'un bouton « Favoris » textuel pour rappeler le tri tout en réduisant la largeur nécessaire.
+
+## [0.07] - 2025-10-07
+### Modifié
+- Barre d'actions compacte en haut de l'écran avec des boutons plus courts et un défilement horizontal pour éviter les empilements.
+- Réduction des marges du bandeau supérieur afin de libérer de l'espace utile pour les cartes.
+
+## [0.06] - 2025-10-06
+### Modifié
+- Réorganisation des commandes principales en haut de l'écran avec un bouton « Mode édition » et le raccourci « Nouvelle demande ».
+- Masquage des actions étoile et crayon hors mode édition tout en conservant un indicateur étoilé pour les favoris.
+- Agrandissement des icônes d'édition et de favoris pour faciliter la sélection tactile et mise à jour du cache statique.
+
+## [0.05] - 2025-10-05
+### Ajouté
+- Intégration des enregistrements audio fournis pour toutes les demandes par défaut, avec une nouvelle carte « Un mouchoir ».
+
+### Modifié
+- Mise à jour du service worker pour mettre en cache les fichiers audio locaux et diffusion de la version v0.05 de l'application.
+
 ## [0.04] - 2025-10-04
 ### Modifié
 - Retrait définitif du badge « MP3 indisponible » en supprimant la classe appliquée côté JavaScript et en forçant un nouveau cache statique.

@@ -30,54 +30,89 @@ header {
   position: sticky;
   top: 0;
   z-index: 10;
-  padding: 16px;
-  padding-right: 72px;
+  padding: 10px 14px;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(209, 213, 219, 0.6);
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  width: 100%;
+  overflow-x: auto;
+  padding: 0 2px;
+  scrollbar-width: none;
+}
+
+.header-actions::-webkit-scrollbar {
+  display: none;
 }
 
 .app-version {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 600;
   color: var(--text-soft);
   letter-spacing: 0.08em;
+  align-self: flex-end;
 }
 
-.toggle-button,
-.icon-button {
-  border: 1px solid rgba(31, 111, 235, 0.2);
+.toolbar-button {
+  border: 1px solid rgba(31, 111, 235, 0.18);
   background: rgba(31, 111, 235, 0.08);
   color: var(--accent);
   border-radius: 999px;
-  padding: 8px 14px;
-  font-size: 0.95rem;
+  padding: 6px 12px;
+  font-size: 0.8rem;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
-  transition: transform 120ms ease, background 160ms ease;
+  transition: transform 120ms ease, background 160ms ease, color 160ms ease;
+  white-space: nowrap;
+  line-height: 1;
 }
 
-.toggle-button:active,
-.icon-button:active {
-  transform: scale(0.97);
+.toolbar-button .icon {
+  font-size: 1rem;
 }
 
-.toggle-button.is-active {
+.toolbar-button.icon-only {
+  padding: 6px 9px;
+  width: 40px;
+  justify-content: center;
+}
+
+.toolbar-button.icon-only .icon {
+  font-size: 1.2rem;
+}
+
+.toolbar-button:active {
+  transform: scale(0.95);
+}
+
+.toolbar-button.is-active {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
 }
 
+.toolbar-button.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 12px 22px rgba(31, 111, 235, 0.18);
+}
+
 main {
   flex: 1;
-  padding: 16px 14px 120px;
+  padding: 16px 20px 48px;
 }
 
 
@@ -144,15 +179,29 @@ main {
 
 .phrase-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   margin-left: auto;
   align-items: center;
 }
 
+.pinned-indicator {
+  display: none;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: #f7b500;
+}
+
+.pinned-indicator.is-visible {
+  display: inline-flex;
+}
+
 .phrase-actions button {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
   border: none;
   background: rgba(255, 255, 255, 0.85);
   color: var(--text-soft);
@@ -162,6 +211,7 @@ main {
   cursor: pointer;
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
   transition: transform 120ms ease, background 140ms ease;
+  font-size: 1.35rem;
 }
 
 .phrase-actions button:hover {
@@ -175,28 +225,6 @@ main {
 
 .star.is-active {
   color: #f7b500;
-}
-
-.add-button {
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-  border-radius: 999px;
-  padding: 14px 18px;
-  background: var(--accent);
-  color: #fff;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 1rem;
-  font-weight: 600;
-  border: none;
-  box-shadow: 0 20px 30px rgba(31, 111, 235, 0.24);
-  cursor: pointer;
-}
-
-.add-button:active {
-  transform: scale(0.95);
 }
 
 .dialog-form {
@@ -321,10 +349,23 @@ button.primary {
 
 @media (max-width: 540px) {
   header {
-    padding: 14px 16px 22px;
+    padding: 9px 10px;
+    gap: 4px;
   }
   .app-version {
-    font-size: 0.68rem;
+    font-size: 0.62rem;
+  }
+  .header-actions {
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  .toolbar-button {
+    font-size: 0.75rem;
+    padding: 6px 10px;
+  }
+  .toolbar-button.icon-only {
+    width: 36px;
+    padding: 6px 8px;
   }
   .phrase-grid {
     gap: 3px;
