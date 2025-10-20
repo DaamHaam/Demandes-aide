@@ -1,134 +1,77 @@
-name: Pages (official + PR previews)
+name: Pages (prod, beta, PR previews)
 
 on:
   push:
-    branches: [ main ]                 # prod = main
-  pull_request:                        # PR depuis le même dépôt
-    branches: [ main ]
-  pull_request_target:                 # PR depuis un fork (droits sur le dépôt cible)
-    types: [ opened, synchronize, reopened ]
-    branches: [ main ]
-  workflow_dispatch:
+    branches: [ main, Next ]
+  pull_request:
+    branches: [ Next ]
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write        # push sur gh-pages
+  pull-requests: write   # commenter l'URL de preview
 
 concurrency:
-  group: github-pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # --- Déploiement de production (push sur main) ---
-  deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  deploy-prod:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # Mise en forme des fichiers à publier (dossier dist/)
-      - name: Prepare dist
-        run: |
-          set -e
-          rm -rf dist
-          mkdir -p dist
-          rsync -a --exclude .git --exclude .github --exclude dist --exclude node_modules ./ dist/
-          touch dist/.nojekyll
-          # Fallback SPA/PWA
-          if [ -f "dist/index.html" ]; then
-            cp -f dist/index.html dist/404.html || true
-          elif [ -f "index.html" ]; then
-            cp -f index.html dist/404.html || true
-          fi
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
+      # Déploie le site de prod à la racine (en conservant /beta)
+      - name: Deploy production to gh-pages root
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: dist
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          keep_files: true     # ne supprime pas /beta ni /beta/pr-*
+          force_orphan: true   # un historique propre côté gh-pages
 
-      - id: deployment
-        name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
-
-  # --- Previews pour PR créées depuis le même dépôt ---
-  preview-internal:
-    if: github.event_name == 'pull_request'
+  deploy-beta:
+    if: github.ref == 'refs/heads/Next'
     runs-on: ubuntu-latest
-    environment:
-      name: preview
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout PR (same-repo)
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
+      - uses: actions/checkout@v4
 
-      - name: Prepare dist (preview)
-        run: |
-          set -e
-          rm -rf dist
-          mkdir -p dist
-          rsync -a --exclude .git --exclude .github --exclude dist --exclude node_modules ./ dist/
-          touch dist/.nojekyll
-          if [ -f "dist/index.html" ]; then
-            cp -f dist/index.html dist/404.html || true
-          elif [ -f "index.html" ]; then
-            cp -f index.html dist/404.html || true
-          fi
-
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
+      # Déploie la bêta dans le sous-dossier /beta
+      - name: Deploy beta to gh-pages/beta
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: dist
-      - id: deployment
-        name: Deploy PR preview
-        uses: actions/deploy-pages@v4
-        with:
-          preview: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          destination_dir: beta
+          keep_files: true     # préserve la racine (prod) et les previews
 
-  # --- Previews pour PR créées depuis un fork (safe) ---
-  preview-fork:
-    if: github.event_name == 'pull_request_target'
+  pr-preview:
+    if: github.event_name == 'pull_request' && github.base_ref == 'Next'
     runs-on: ubuntu-latest
-    environment:
-      name: preview
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      # on déploie le contenu EXACT du fork, sans donner nos credentials au code du fork
-      - name: Checkout PR HEAD from fork (safe)
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.sha }}
-          persist-credentials: false
+          ref: ${{ github.head_ref }}
 
-      - name: Prepare dist (preview fork)
+      # Déploie la préversion de la PR sous /beta/pr-<num>/
+      - name: Deploy PR preview
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          destination_dir: beta/pr-${{ github.event.number }}
+          keep_files: true
+
+      # Commente l'URL de la preview sur la PR (commentaire "sticky")
+      - name: Compute repo vars
+        id: vars
         run: |
-          set -e
-          rm -rf dist
-          mkdir -p dist
-          rsync -a --exclude .git --exclude .github --exclude dist --exclude node_modules ./ dist/
-          touch dist/.nojekyll
-          if [ -f "dist/index.html" ]; then
-            cp -f dist/index.html dist/404.html || true
-          elif [ -f "index.html" ]; then
-            cp -f index.html dist/404.html || true
-          fi
-
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
+          echo "REPO_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_ENV
+      - name: Create comment body
+        run: |
+          echo "🚀 Préversion déployée : https://${{ github.repository_owner }}.github.io/${REPO_NAME}/beta/pr-${{ github.event.number }}/" > preview-comment.md
+      - name: Comment preview URL
+        uses: marocchino/sticky-pull-request-comment@v2
         with:
-          path: dist
-      - id: deployment
-        name: Deploy PR preview (fork)
-        uses: actions/deploy-pages@v4
-        with:
-          preview: true
+          recreate: true
+          path: preview-comment.md
