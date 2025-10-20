@@ -1,0 +1,97 @@
+<!DOCTYPE html> 
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1f6feb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Demandes rapides</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header>
+      <span class="app-version" aria-label="Version de l'application">v0.08</span>
+      <div class="header-actions">
+        <button id="favoritesToggle" class="toolbar-button" type="button" aria-pressed="false">
+          <span class="icon" aria-hidden="true">★</span>
+          <span class="label">Favoris</span>
+        </button>
+        <button
+          id="editToggle"
+          class="toolbar-button icon-only"
+          type="button"
+          aria-label="Activer le mode édition"
+          aria-pressed="false"
+        >
+          <span class="icon" aria-hidden="true">✎</span>
+        </button>
+        <button
+          id="addButton"
+          class="toolbar-button primary icon-only"
+          type="button"
+          aria-label="Créer une nouvelle demande"
+        >
+          <span class="icon" aria-hidden="true">＋</span>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section id="phraseGrid" class="phrase-grid" aria-live="polite" aria-label="Liste des demandes"></section>
+      <p id="emptyState" class="empty-placeholder" hidden>
+        Ajoutez votre première demande pour commencer.
+      </p>
+    </main>
+
+    <dialog id="phraseDialog" class="dialog-form">
+      <form method="dialog" id="phraseForm">
+        <div class="dialog-header">
+          <h2 id="dialogTitle">Nouvelle demande</h2>
+          <p class="dialog-subtitle">Renseignez le texte du bouton et la phrase prononcée.</p>
+        </div>
+        <div class="dialog-body">
+          <label>
+            Texte du bouton
+            <input type="text" id="fieldLabel" name="label" required maxlength="80" />
+          </label>
+          <label>
+            Phrase parlée
+            <textarea id="fieldTts" name="tts" rows="3" maxlength="240" placeholder="Reprendre le texte du bouton si laissé vide."></textarea>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" id="fieldPinned" name="pinned" />
+            Ajouter aux favoris
+          </label>
+          <label class="checkbox-row" id="regenerateRow" hidden>
+            <input type="checkbox" id="fieldRegenerate" name="regenerate" />
+            Régénérer le MP3 après les modifications
+          </label>
+        </div>
+        <div class="dialog-footer">
+          <button type="button" class="secondary" id="cancelDialog">Annuler</button>
+          <button type="submit" class="primary" id="savePhrase">Enregistrer</button>
+        </div>
+      </form>
+    </dialog>
+
+    <template id="phraseTemplate">
+      <div class="phrase-item">
+        <article class="phrase-card" draggable="true">
+          <button type="button" class="phrase-button"></button>
+          <div class="phrase-actions">
+            <span class="pinned-indicator" aria-hidden="true"></span>
+            <button class="star" type="button" aria-label="Basculer en favori"></button>
+            <button class="edit" type="button" aria-label="Modifier"></button>
+          </div>
+        </article>
+        <p class="queue-indicator" hidden>MP3 en cours...</p>
+      </div>
+    </template>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
