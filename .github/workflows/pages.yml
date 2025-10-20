@@ -21,14 +21,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Déploie le site de prod à la racine (en conservant /beta)
+      # Déploie la PROD à la racine de gh-pages
       - name: Deploy production to gh-pages root
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
           publish_dir: .
-          keep_files: true     # ne supprime pas /beta ni /beta/pr-*
-          force_orphan: true   # un historique propre côté gh-pages
+          keep_files: true      # conserve /beta et /beta/pr-*
 
   deploy-beta:
     if: github.ref == 'refs/heads/Next'
@@ -36,14 +36,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Déploie la bêta dans le sous-dossier /beta
+      # Déploie la BÊTA sous /beta
       - name: Deploy beta to gh-pages/beta
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
           publish_dir: .
           destination_dir: beta
-          keep_files: true     # préserve la racine (prod) et les previews
+          keep_files: true      # préserve la racine (prod) et les previews
 
   pr-preview:
     if: github.event_name == 'pull_request' && github.base_ref == 'Next'
@@ -53,11 +54,12 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
-      # Déploie la préversion de la PR sous /beta/pr-<num>/
+      # Déploie la PR sous /beta/pr-<num>/
       - name: Deploy PR preview
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
           publish_dir: .
           destination_dir: beta/pr-${{ github.event.number }}
           keep_files: true
