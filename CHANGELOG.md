@@ -2,6 +2,11 @@
 
 Ce document suit les changements notables du projet. Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et respecte la numérotation sémantique.
 
+## [0.10] - 2025-10-10
+### Modifié
+- Suppression de l'option « Rajouter s'il vous plaît » et retrait automatique de cette demande pour les données existantes.
+- Mise à jour de la version affichée et du cache statique du service worker pour la publication 0.10.
+
 ## [0.08] - 2025-10-08
 ### Modifié
 - Raccourcissement du bandeau supérieur avec l'affichage discret de la version et des boutons réduits alignés à l'horizontale.
