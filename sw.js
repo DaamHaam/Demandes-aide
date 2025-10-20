@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'aac-static-v8';
+const STATIC_CACHE = 'aac-static-v9';
 const MP3_CACHE = 'aac-mp3-v1';
 const MP3_CACHE_LIMIT = 30;
 const STATIC_ASSETS = [
@@ -20,7 +20,8 @@ const STATIC_ASSETS = [
   './audio/me-coucher.mp3',
   './audio/jai-mal.mp3',
   './audio/incliner-mon-fauteuil.mp3',
-  './audio/un-mouchoir.mp3'
+  './audio/un-mouchoir.mp3',
+  './audio/SVP.mp3'
 ];
 
 self.addEventListener('install', (event) => {

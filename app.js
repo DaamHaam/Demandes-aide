@@ -4,6 +4,7 @@ const QUEUE_KEY = 'aac_generation_queue_v1';
 const VOICE_STORAGE_KEY = 'aac_voice_selection_v1';
 const VOICE_NAME_STORAGE_KEY = 'aac_voice_name_v1';
 const MP3_CACHE_NAME = 'aac-mp3-v1';
+const POLITENESS_AUDIO_URL = './audio/SVP.mp3';
 
 // Configuration à remplacer par vos identifiants ElevenLabs.
 window.APP_CONFIG = window.APP_CONFIG || {
@@ -152,6 +153,8 @@ const emptyState = document.querySelector('#emptyState');
 const addButton = document.querySelector('#addButton');
 const editToggle = document.querySelector('#editToggle');
 const favoritesToggle = document.querySelector('#favoritesToggle');
+const politenessToggle = document.querySelector('#politenessToggle');
+const politenessControl = document.querySelector('#politenessControl');
 const phraseTemplate = document.querySelector('#phraseTemplate');
 const dialog = document.querySelector('#phraseDialog');
 const dialogTitle = document.querySelector('#dialogTitle');
@@ -171,6 +174,7 @@ let isProcessingQueue = false;
 let currentGenerationId = null;
 let activePhraseId = null;
 let playingPhraseId = null;
+let politenessPhraseId = null;
 let isEditMode = false;
 
 if (!editToggle) {
@@ -181,17 +185,43 @@ const audio = new Audio();
 audio.preload = 'auto';
 audio.volume = settings.volume ?? 1;
 
-audio.addEventListener('ended', () => {
-  playingPhraseId = null;
+const politenessAudio = new Audio(POLITENESS_AUDIO_URL);
+politenessAudio.preload = 'auto';
+politenessAudio.volume = audio.volume;
+
+audio.addEventListener('ended', handlePhraseAudioEnded);
+audio.addEventListener('error', handlePhraseAudioError);
+audio.addEventListener('volumechange', () => {
+  politenessAudio.volume = audio.volume;
 });
 
-audio.addEventListener('error', () => {
-  playingPhraseId = null;
+politenessAudio.addEventListener('ended', () => {
+  stopPolitenessAudio();
+  politenessPhraseId = null;
+});
+
+politenessAudio.addEventListener('error', () => {
+  stopPolitenessAudio();
+  politenessPhraseId = null;
 });
 
 favoritesToggle.setAttribute('aria-pressed', settings.favoritesFirst ? 'true' : 'false');
 if (settings.favoritesFirst) {
   favoritesToggle.classList.add('is-active');
+}
+
+if (politenessToggle) {
+  politenessToggle.checked = Boolean(settings.politenessEnabled);
+  updatePolitenessControlState();
+  politenessToggle.addEventListener('change', () => {
+    settings.politenessEnabled = politenessToggle.checked;
+    updatePolitenessControlState();
+    saveSettings(settings);
+    if (!settings.politenessEnabled) {
+      politenessPhraseId = null;
+      stopPolitenessAudio();
+    }
+  });
 }
 
 favoritesToggle.addEventListener('click', () => {
@@ -432,14 +462,16 @@ function loadPhrases() {
 }
 
 function loadSettings() {
+  const defaults = { favoritesFirst: true, politenessEnabled: false };
   const raw = localStorage.getItem(SETTINGS_KEY);
   if (!raw) {
-    return { favoritesFirst: true };
+    return { ...defaults };
   }
   try {
     const parsed = JSON.parse(raw) || {};
     const next = {
-      favoritesFirst: parsed.favoritesFirst ?? true
+      favoritesFirst: parsed.favoritesFirst ?? defaults.favoritesFirst,
+      politenessEnabled: parsed.politenessEnabled ?? defaults.politenessEnabled
     };
     if (Object.prototype.hasOwnProperty.call(parsed, 'volume')) {
       saveSettings(next);
@@ -447,12 +479,15 @@ function loadSettings() {
     return next;
   } catch (error) {
     console.warn('Paramètres illisibles, utilisation des valeurs par défaut.', error);
-    return { favoritesFirst: true };
+    return { ...defaults };
   }
 }
 
 function saveSettings(next) {
-  const payload = { favoritesFirst: Boolean(next.favoritesFirst) };
+  const payload = {
+    favoritesFirst: Boolean(next.favoritesFirst),
+    politenessEnabled: Boolean(next.politenessEnabled)
+  };
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
 }
 
@@ -606,15 +641,70 @@ function render() {
   }
 }
 
+function updatePolitenessControlState() {
+  if (!politenessControl || !politenessToggle) {
+    return;
+  }
+  politenessControl.classList.toggle('is-active', politenessToggle.checked);
+}
+
+function stopPolitenessAudio() {
+  if (!politenessAudio.paused) {
+    politenessAudio.pause();
+  }
+  politenessAudio.currentTime = 0;
+}
+
+async function playPolitenessAudio() {
+  if (!settings.politenessEnabled || politenessPhraseId === null) {
+    politenessPhraseId = null;
+    return;
+  }
+  try {
+    politenessAudio.currentTime = 0;
+    if (politenessAudio.src !== POLITENESS_AUDIO_URL) {
+      politenessAudio.src = POLITENESS_AUDIO_URL;
+    }
+    await politenessAudio.play();
+  } catch (error) {
+    console.warn("Lecture de « s'il vous plaît » impossible.", error);
+    politenessPhraseId = null;
+  }
+}
+
+function handlePhraseAudioEnded() {
+  const completedId = playingPhraseId;
+  playingPhraseId = null;
+  if (!completedId) {
+    politenessPhraseId = null;
+    return;
+  }
+  if (settings.politenessEnabled && politenessPhraseId === completedId) {
+    playPolitenessAudio();
+  } else {
+    politenessPhraseId = null;
+  }
+}
+
+function handlePhraseAudioError() {
+  playingPhraseId = null;
+  politenessPhraseId = null;
+  stopPolitenessAudio();
+}
+
 async function handlePhraseTap(id) {
   const phrase = phrases.find((item) => item.id === id);
   if (!phrase) return;
 
   setActiveCard(id);
 
+  politenessPhraseId = null;
+  stopPolitenessAudio();
+
   if (playingPhraseId && playingPhraseId !== id) {
     audio.pause();
     audio.currentTime = 0;
+    playingPhraseId = null;
   }
 
   const audioUrl = getPhraseAudioUrl(phrase);
@@ -625,6 +715,9 @@ async function handlePhraseTap(id) {
       audio.src = audioUrl;
       playingPhraseId = id;
       await audio.play();
+      if (settings.politenessEnabled) {
+        politenessPhraseId = id;
+      }
       return;
     } catch (error) {
       console.warn('Lecture impossible, suppression du marquage MP3.', error);
@@ -633,10 +726,12 @@ async function handlePhraseTap(id) {
         savePhrases();
         render();
       }
+      politenessPhraseId = null;
     }
   }
 
   playingPhraseId = null;
+  politenessPhraseId = null;
 
   if (!isLocalAudio(phrase) && !phrase.hasMp3) {
     enqueueGeneration(id);
