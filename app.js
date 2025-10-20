@@ -133,6 +133,53 @@ const DEFAULT_PHRASES = [
   }
 ];
 
+function normalizePolitenessText(input) {
+  return (input || '')
+    .toString()
+    .toLowerCase()
+    .replace(/[«»“”"]/g, '')
+    .replace(/’/g, "'")
+    .replace(/[-_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function shouldRemovePleaseOption(phrase) {
+  if (!phrase) {
+    return false;
+  }
+
+  const id = (phrase.id || '').toString().toLowerCase();
+  const idCompact = id.replace(/[-_\s]/g, '');
+  if (id.includes('rajouter') && (idCompact.includes('svp') || idCompact.includes('silvousplait'))) {
+    return true;
+  }
+
+  const audioPath = (phrase.localAudio || phrase.mp3Url || '').toString().toLowerCase();
+  if (audioPath.includes('svp.mp3')) {
+    return true;
+  }
+
+  const normalizedLabel = normalizePolitenessText(phrase.label);
+  const normalizedTts = normalizePolitenessText(phrase.tts_text);
+
+  const containsPleaseLabel =
+    (normalizedLabel.includes("s'il vous plaît") && normalizedLabel.includes('rajouter')) ||
+    normalizedLabel.includes('rajouter svp');
+  const containsPleaseTts =
+    (normalizedTts.includes("s'il vous plaît") && normalizedTts.includes('rajouter')) ||
+    normalizedTts.includes('rajouter svp');
+
+  return containsPleaseLabel || containsPleaseTts;
+}
+
+function sanitizePhrases(list) {
+  if (!Array.isArray(list)) {
+    return [];
+  }
+  return list.filter((phrase) => !shouldRemovePleaseOption(phrase));
+}
+
 function isLocalAudio(phrase) {
   return Boolean(phrase?.localAudio);
 }
@@ -384,7 +431,8 @@ function loadPhrases() {
     return phrase;
   };
 
-  const cloneDefaults = () => DEFAULT_PHRASES.map((phrase) => applyLocalAudioDefaults({ ...phrase }));
+  const cloneDefaults = () =>
+    sanitizePhrases(DEFAULT_PHRASES.map((phrase) => applyLocalAudioDefaults({ ...phrase })));
 
   const mergeWithDefaults = (list) => {
     const map = new Map();
@@ -424,7 +472,16 @@ function loadPhrases() {
     if (!Array.isArray(parsed) || parsed.length === 0) {
       return cloneDefaults();
     }
-    return mergeWithDefaults(parsed);
+    const merged = mergeWithDefaults(parsed);
+    const sanitized = sanitizePhrases(merged);
+    if (sanitized.length !== merged.length) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
+      } catch (error) {
+        console.warn("Impossible de purger l'option ‘Rajouter s'il vous plaît’.", error);
+      }
+    }
+    return sanitized;
   } catch (error) {
     console.warn('Impossible de lire les phrases stockées, retour aux valeurs par défaut.', error);
     return cloneDefaults();
@@ -473,6 +530,7 @@ function saveQueue() {
 }
 
 function savePhrases() {
+  phrases = sanitizePhrases(phrases);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(phrases));
 }
 
