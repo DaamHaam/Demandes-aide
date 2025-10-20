@@ -1,0 +1,29 @@
+name: Cleanup PR previews
+
+on:
+  pull_request:
+    types: [ closed ]
+    branches: [ Next ]
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Remove preview folder
+        run: |
+          rm -rf beta/pr-${{ github.event.number }}
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: cleanup preview for PR #${{ github.event.number }}"
+            git push
+          fi
