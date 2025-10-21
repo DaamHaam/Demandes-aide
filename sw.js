@@ -55,6 +55,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  if (url.origin === 'https://zfqpbddopgrqbsgizith.supabase.co') {
+    event.respondWith(fetch(request));
+    return;
+  }
+
   if (url.origin === self.location.origin && url.pathname.startsWith('/tts/')) {
     event.respondWith(cacheFirst(request, MP3_CACHE));
     return;

@@ -122,6 +122,12 @@ main {
   gap: 4px;
 }
 
+.phrase-grid.is-loading {
+  opacity: 0.6;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
 .phrase-item {
   display: flex;
   flex-direction: column;
@@ -175,6 +181,22 @@ main {
   flex-direction: column;
   justify-content: center;
   gap: 6px;
+}
+
+.phrase-button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.phrase-label {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.phrase-tts {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-soft);
 }
 
 .phrase-actions {
