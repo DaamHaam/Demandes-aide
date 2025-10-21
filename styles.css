@@ -166,7 +166,6 @@ main {
   box-shadow: 0 0 0 4px var(--accent-soft), var(--shadow-soft);
 }
 
-
 .phrase-button {
   flex: 1;
   border: none;
@@ -186,8 +185,20 @@ main {
 }
 
 .phrase-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.phrase-label-text {
   font-size: 1.2rem;
   font-weight: 700;
+}
+
+.favorite-icon {
+  font-size: 1.05rem;
+  color: #f7b500;
+  text-shadow: 0 0 6px rgba(247, 181, 0, 0.35);
 }
 
 .phrase-actions {
@@ -195,6 +206,10 @@ main {
   gap: 6px;
   margin-left: auto;
   align-items: center;
+}
+
+.phrase-actions[hidden] {
+  display: none !important;
 }
 
 .pinned-indicator {
@@ -312,8 +327,9 @@ dialog::backdrop {
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid var(--border-soft);
-  background: #fff;
+  background: var(--bg-card);
   color: var(--text-strong);
+  caret-color: var(--accent);
 }
 
 .dialog-body input::placeholder,

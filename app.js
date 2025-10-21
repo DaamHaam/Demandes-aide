@@ -199,6 +199,17 @@ function toPublicUrl(path) {
   return `https://zfqpbddopgrqbsgizith.supabase.co/storage/v1/object/public/${cleanedPath}`;
 }
 
+function sortCards(cards) {
+  return [...cards].sort((a, b) => {
+    if (a.is_favorite === b.is_favorite) {
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA;
+    }
+    return a.is_favorite ? -1 : 1;
+  });
+}
+
 async function loadCards() {
   setLoading(true);
   try {
@@ -212,7 +223,7 @@ async function loadCards() {
       throw error;
     }
 
-    state.cards = Array.isArray(data) ? data : [];
+    state.cards = sortCards(Array.isArray(data) ? data : []);
     if (state.playingCardId && !state.cards.some((card) => card.id === state.playingCardId)) {
       state.playingCardId = null;
     }
@@ -230,10 +241,10 @@ async function loadCards() {
 }
 
 function getVisibleCards() {
-  if (!state.showFavoritesOnly) {
-    return state.cards;
+  if (state.showFavoritesOnly) {
+    return sortCards(state.cards.filter((card) => card.is_favorite));
   }
-  return state.cards.filter((card) => card.is_favorite);
+  return state.cards;
 }
 
 function renderCards() {
@@ -281,59 +292,74 @@ function renderCards() {
     }
 
     if (button) {
-      button.replaceChildren(createLabelElement(card.label));
+      button.replaceChildren(createLabelElement(card));
       button.dataset.cardId = card.id;
       button.addEventListener('click', () => handlePlay(card));
     }
 
     if (pinnedIndicator) {
+      const shouldDisplayPinned = state.isEditMode && Boolean(card.is_favorite);
       pinnedIndicator.textContent = '★';
-      pinnedIndicator.classList.toggle('is-visible', Boolean(card.is_favorite));
+      pinnedIndicator.classList.toggle('is-visible', shouldDisplayPinned);
     }
 
     if (actions) {
-      actions.hidden = !state.isEditMode;
-      actions.setAttribute('aria-hidden', state.isEditMode ? 'false' : 'true');
+      const isVisible = state.isEditMode;
+      actions.hidden = !isVisible;
+      actions.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+      actions.classList.toggle('is-visible', isVisible);
     }
 
     if (starButton) {
-      starButton.hidden = !state.isEditMode;
-      starButton.textContent = card.is_favorite ? '★' : '☆';
-      starButton.classList.toggle('is-active', Boolean(card.is_favorite));
-      starButton.setAttribute('aria-pressed', card.is_favorite ? 'true' : 'false');
-      starButton.addEventListener('click', (event) => {
-        event.stopPropagation();
-        if (!state.isEditMode) {
-          return;
-        }
-        toggleFavorite(card.id, !card.is_favorite);
-      });
+      if (state.isEditMode) {
+        starButton.hidden = false;
+        starButton.textContent = card.is_favorite ? '★' : '☆';
+        starButton.classList.toggle('is-active', Boolean(card.is_favorite));
+        starButton.setAttribute('aria-pressed', card.is_favorite ? 'true' : 'false');
+        starButton.addEventListener('click', (event) => {
+          event.stopPropagation();
+          if (!state.isEditMode) {
+            return;
+          }
+          toggleFavorite(card.id, !card.is_favorite);
+        });
+      } else {
+        starButton.hidden = true;
+      }
     }
 
     if (deleteButton) {
-      deleteButton.hidden = !state.isEditMode;
-      deleteButton.textContent = '🗑';
-      deleteButton.addEventListener('click', (event) => {
-        event.stopPropagation();
-        if (!state.isEditMode) {
-          return;
-        }
-        if (confirm('Supprimer cette demande ?')) {
-          deleteCard(card.id);
-        }
-      });
+      if (state.isEditMode) {
+        deleteButton.hidden = false;
+        deleteButton.textContent = '🗑';
+        deleteButton.addEventListener('click', (event) => {
+          event.stopPropagation();
+          if (!state.isEditMode) {
+            return;
+          }
+          if (confirm('Supprimer cette demande ?')) {
+            deleteCard(card.id);
+          }
+        });
+      } else {
+        deleteButton.hidden = true;
+      }
     }
 
     if (settingsButton) {
-      settingsButton.hidden = !state.isEditMode;
-      settingsButton.textContent = '✎';
-      settingsButton.addEventListener('click', (event) => {
-        event.stopPropagation();
-        if (!state.isEditMode) {
-          return;
-        }
-        openDialog(card);
-      });
+      if (state.isEditMode) {
+        settingsButton.hidden = false;
+        settingsButton.textContent = '✎';
+        settingsButton.addEventListener('click', (event) => {
+          event.stopPropagation();
+          if (!state.isEditMode) {
+            return;
+          }
+          openDialog(card);
+        });
+      } else {
+        settingsButton.hidden = true;
+      }
     }
 
     if (queueIndicator) {
@@ -352,11 +378,24 @@ function renderCards() {
   }
 }
 
-function createLabelElement(text) {
-  const span = document.createElement('span');
-  span.className = 'phrase-label';
-  span.textContent = text;
-  return span;
+function createLabelElement(card) {
+  const wrapper = document.createElement('span');
+  wrapper.className = 'phrase-label';
+
+  const text = document.createElement('span');
+  text.className = 'phrase-label-text';
+  text.textContent = card.label;
+  wrapper.appendChild(text);
+
+  if (!state.isEditMode && card.is_favorite) {
+    const star = document.createElement('span');
+    star.className = 'favorite-icon';
+    star.textContent = '★';
+    star.setAttribute('aria-hidden', 'true');
+    wrapper.appendChild(star);
+  }
+
+  return wrapper;
 }
 
 async function handlePlay(card) {
@@ -426,7 +465,7 @@ async function addCard({ label, phrase, audioPath, isFavorite }) {
       throw error;
     }
 
-    state.cards = [data, ...state.cards];
+    state.cards = sortCards([data, ...state.cards]);
     renderCards();
   } catch (error) {
     throw error;
@@ -444,8 +483,10 @@ async function toggleFavorite(id, nextValue) {
       throw error;
     }
 
-    state.cards = state.cards.map((card) =>
-      card.id === id ? { ...card, is_favorite: nextValue } : card
+    state.cards = sortCards(
+      state.cards.map((card) =>
+        card.id === id ? { ...card, is_favorite: nextValue } : card
+      )
     );
     if (!nextValue && state.showFavoritesOnly && state.playingCardId === id) {
       state.playingCardId = null;
@@ -468,7 +509,7 @@ async function deleteCard(id) {
       throw error;
     }
 
-    state.cards = state.cards.filter((card) => card.id !== id);
+    state.cards = sortCards(state.cards.filter((card) => card.id !== id));
     if (state.playingCardId === id) {
       state.playingCardId = null;
     }
@@ -499,7 +540,9 @@ async function updateCard(id, { label, phrase, audioPath, isFavorite }) {
       throw error;
     }
 
-    state.cards = state.cards.map((card) => (card.id === id ? data : card));
+    state.cards = sortCards(
+      state.cards.map((card) => (card.id === id ? data : card))
+    );
     if (!data.is_favorite && state.showFavoritesOnly && state.playingCardId === id) {
       state.playingCardId = null;
     }
