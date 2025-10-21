@@ -27,7 +27,8 @@ const state = {
   isEditMode: false,
   showFavoritesOnly: false,
   isLoading: false,
-  playingCardId: null
+  playingCardId: null,
+  editingCardId: null
 };
 
 const audioPlayer = new Audio();
@@ -91,11 +92,16 @@ phraseForm?.addEventListener('submit', async (event) => {
 
   savePhraseButton.disabled = true;
   try {
-    await addCard({ label, phrase, audioPath, isFavorite });
+    if (state.editingCardId) {
+      await updateCard(state.editingCardId, { label, phrase, audioPath, isFavorite });
+    } else {
+      await addCard({ label, phrase, audioPath, isFavorite });
+    }
     closeDialog();
   } catch (error) {
-    console.error('[supabase] Impossible d\'ajouter la demande.', error);
-    alert("Impossible d'ajouter la demande. Réessayez plus tard.");
+    const actionLabel = state.editingCardId ? 'mettre à jour' : 'ajouter';
+    console.error(`[supabase] Impossible de ${actionLabel} la demande.`, error);
+    alert(`Impossible de ${actionLabel} la demande. Réessayez plus tard.`);
   } finally {
     savePhraseButton.disabled = false;
   }
@@ -118,16 +124,41 @@ function resetForm() {
   if (fieldLabel) {
     fieldLabel.value = '';
   }
+  if (savePhraseButton) {
+    savePhraseButton.textContent = 'Enregistrer';
+  }
+  state.editingCardId = null;
 }
 
-function openDialog() {
+function openDialog(card = null) {
   if (!dialog) {
     return;
   }
   resetForm();
-  if (dialogTitle) {
+  if (card) {
+    state.editingCardId = card.id;
+    if (dialogTitle) {
+      dialogTitle.textContent = 'Modifier la demande';
+    }
+    if (savePhraseButton) {
+      savePhraseButton.textContent = 'Mettre à jour';
+    }
+    if (fieldLabel) {
+      fieldLabel.value = card.label ?? '';
+    }
+    if (fieldTts) {
+      fieldTts.value = card.phrase ?? '';
+    }
+    if (fieldAudio) {
+      fieldAudio.value = card.audio_path ?? '';
+    }
+    if (fieldPinned) {
+      fieldPinned.checked = Boolean(card.is_favorite);
+    }
+  } else if (dialogTitle) {
     dialogTitle.textContent = 'Nouvelle demande';
   }
+
   dialog.showModal();
   fieldLabel?.focus();
 }
@@ -182,6 +213,9 @@ async function loadCards() {
     }
 
     state.cards = Array.isArray(data) ? data : [];
+    if (state.playingCardId && !state.cards.some((card) => card.id === state.playingCardId)) {
+      state.playingCardId = null;
+    }
     renderCards();
   } catch (error) {
     console.error('[supabase] Impossible de charger les demandes.', error);
@@ -233,7 +267,9 @@ function renderCards() {
     const button = cardWrapper.querySelector('.phrase-button');
     const pinnedIndicator = cardWrapper.querySelector('.pinned-indicator');
     const starButton = cardWrapper.querySelector('.star');
-    const editButton = cardWrapper.querySelector('.edit');
+    const deleteButton = cardWrapper.querySelector('.delete');
+    const settingsButton = cardWrapper.querySelector('.settings');
+    const actions = cardWrapper.querySelector('.phrase-actions');
     const queueIndicator = cardWrapper.querySelector('.queue-indicator');
 
     const hasAudio = Boolean(card.audio_path && card.audio_path.trim());
@@ -245,13 +281,8 @@ function renderCards() {
     }
 
     if (button) {
-      button.replaceChildren(createLabelElement(card.label), createPhraseElement(card.phrase));
-      button.disabled = !hasAudio;
-      if (hasAudio) {
-        button.removeAttribute('aria-disabled');
-      } else {
-        button.setAttribute('aria-disabled', 'true');
-      }
+      button.replaceChildren(createLabelElement(card.label));
+      button.dataset.cardId = card.id;
       button.addEventListener('click', () => handlePlay(card));
     }
 
@@ -260,25 +291,48 @@ function renderCards() {
       pinnedIndicator.classList.toggle('is-visible', Boolean(card.is_favorite));
     }
 
+    if (actions) {
+      actions.hidden = !state.isEditMode;
+      actions.setAttribute('aria-hidden', state.isEditMode ? 'false' : 'true');
+    }
+
     if (starButton) {
+      starButton.hidden = !state.isEditMode;
       starButton.textContent = card.is_favorite ? '★' : '☆';
       starButton.classList.toggle('is-active', Boolean(card.is_favorite));
       starButton.setAttribute('aria-pressed', card.is_favorite ? 'true' : 'false');
       starButton.addEventListener('click', (event) => {
         event.stopPropagation();
+        if (!state.isEditMode) {
+          return;
+        }
         toggleFavorite(card.id, !card.is_favorite);
       });
     }
 
-    if (editButton) {
-      editButton.textContent = '🗑';
-      editButton.setAttribute('aria-label', 'Supprimer la demande');
-      editButton.hidden = !state.isEditMode;
-      editButton.addEventListener('click', (event) => {
+    if (deleteButton) {
+      deleteButton.hidden = !state.isEditMode;
+      deleteButton.textContent = '🗑';
+      deleteButton.addEventListener('click', (event) => {
         event.stopPropagation();
+        if (!state.isEditMode) {
+          return;
+        }
         if (confirm('Supprimer cette demande ?')) {
           deleteCard(card.id);
         }
+      });
+    }
+
+    if (settingsButton) {
+      settingsButton.hidden = !state.isEditMode;
+      settingsButton.textContent = '✎';
+      settingsButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (!state.isEditMode) {
+          return;
+        }
+        openDialog(card);
       });
     }
 
@@ -305,20 +359,24 @@ function createLabelElement(text) {
   return span;
 }
 
-function createPhraseElement(text) {
-  const span = document.createElement('span');
-  span.className = 'phrase-tts';
-  span.textContent = text;
-  return span;
-}
-
 async function handlePlay(card) {
-  if (!card?.audio_path) {
+  if (!card) {
+    return;
+  }
+
+  if (!card.audio_path) {
+    if (!audioPlayer.paused) {
+      audioPlayer.pause();
+    }
+    state.playingCardId = state.playingCardId === card.id ? null : card.id;
+    renderCards();
     return;
   }
 
   const url = toPublicUrl(card.audio_path);
   if (!url) {
+    state.playingCardId = state.playingCardId === card.id ? null : card.id;
+    renderCards();
     return;
   }
 
@@ -389,6 +447,9 @@ async function toggleFavorite(id, nextValue) {
     state.cards = state.cards.map((card) =>
       card.id === id ? { ...card, is_favorite: nextValue } : card
     );
+    if (!nextValue && state.showFavoritesOnly && state.playingCardId === id) {
+      state.playingCardId = null;
+    }
     renderCards();
   } catch (error) {
     console.error('[supabase] Impossible de mettre à jour le favori.', error);
@@ -408,10 +469,44 @@ async function deleteCard(id) {
     }
 
     state.cards = state.cards.filter((card) => card.id !== id);
+    if (state.playingCardId === id) {
+      state.playingCardId = null;
+    }
     renderCards();
   } catch (error) {
     console.error('[supabase] Impossible de supprimer la demande.', error);
     alert("Impossible de supprimer la demande. Réessayez plus tard.");
+  }
+}
+
+async function updateCard(id, { label, phrase, audioPath, isFavorite }) {
+  try {
+    const payload = {
+      label,
+      phrase,
+      audio_path: audioPath || null,
+      is_favorite: Boolean(isFavorite)
+    };
+
+    const { data, error } = await supabase
+      .from('cards')
+      .update(payload)
+      .eq('id', id)
+      .select('id,label,phrase,audio_path,is_favorite,created_at')
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    state.cards = state.cards.map((card) => (card.id === id ? data : card));
+    if (!data.is_favorite && state.showFavoritesOnly && state.playingCardId === id) {
+      state.playingCardId = null;
+    }
+    renderCards();
+  } catch (error) {
+    console.error('[supabase] Impossible de mettre à jour la demande.', error);
+    throw error;
   }
 }
 
