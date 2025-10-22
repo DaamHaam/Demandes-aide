@@ -8,7 +8,6 @@ const grid = document.querySelector('#phraseGrid');
 const emptyState = document.querySelector('#emptyState');
 const addButton = document.querySelector('#addButton');
 const editToggle = document.querySelector('#editToggle');
-const favoritesToggle = document.querySelector('#favoritesToggle');
 const phraseTemplate = document.querySelector('#phraseTemplate');
 const dialog = document.querySelector('#phraseDialog');
 const dialogTitle = document.querySelector('#dialogTitle');
@@ -25,7 +24,6 @@ const defaultEmptyMessage = emptyState?.textContent?.trim() ?? '';
 const state = {
   cards: [],
   isEditMode: false,
-  showFavoritesOnly: false,
   isLoading: false,
   playingCardId: null,
   editingCardId: null
@@ -52,15 +50,7 @@ audioPlayer.addEventListener('pause', () => {
   }
 });
 
-favoritesToggle?.setAttribute('aria-pressed', 'false');
 editToggle?.setAttribute('aria-pressed', 'false');
-
-favoritesToggle?.addEventListener('click', () => {
-  state.showFavoritesOnly = !state.showFavoritesOnly;
-  favoritesToggle.setAttribute('aria-pressed', state.showFavoritesOnly ? 'true' : 'false');
-  favoritesToggle.classList.toggle('is-active', state.showFavoritesOnly);
-  renderCards();
-});
 
 editToggle?.addEventListener('click', () => {
   state.isEditMode = !state.isEditMode;
@@ -240,27 +230,18 @@ async function loadCards() {
   }
 }
 
-function getVisibleCards() {
-  if (state.showFavoritesOnly) {
-    return sortCards(state.cards.filter((card) => card.is_favorite));
-  }
-  return state.cards;
-}
-
 function renderCards() {
   if (!grid || !phraseTemplate) {
     return;
   }
 
-  const cards = getVisibleCards();
+  const cards = state.cards;
   grid.innerHTML = '';
 
   if (cards.length === 0) {
     if (emptyState) {
       if (state.isLoading) {
         emptyState.textContent = 'Chargement des demandes...';
-      } else if (state.showFavoritesOnly) {
-        emptyState.textContent = 'Aucun favori pour le moment.';
       } else {
         emptyState.textContent = defaultEmptyMessage;
       }
@@ -379,23 +360,22 @@ function renderCards() {
 }
 
 function createLabelElement(card) {
-  const wrapper = document.createElement('span');
-  wrapper.className = 'phrase-label';
+  const fragment = document.createDocumentFragment();
 
   const text = document.createElement('span');
   text.className = 'phrase-label-text';
   text.textContent = card.label;
-  wrapper.appendChild(text);
+  fragment.appendChild(text);
 
   if (!state.isEditMode && card.is_favorite) {
     const star = document.createElement('span');
     star.className = 'favorite-icon';
     star.textContent = '★';
     star.setAttribute('aria-hidden', 'true');
-    wrapper.appendChild(star);
+    fragment.appendChild(star);
   }
 
-  return wrapper;
+  return fragment;
 }
 
 async function handlePlay(card) {
@@ -488,9 +468,6 @@ async function toggleFavorite(id, nextValue) {
         card.id === id ? { ...card, is_favorite: nextValue } : card
       )
     );
-    if (!nextValue && state.showFavoritesOnly && state.playingCardId === id) {
-      state.playingCardId = null;
-    }
     renderCards();
   } catch (error) {
     console.error('[supabase] Impossible de mettre à jour le favori.', error);
@@ -543,9 +520,6 @@ async function updateCard(id, { label, phrase, audioPath, isFavorite }) {
     state.cards = sortCards(
       state.cards.map((card) => (card.id === id ? data : card))
     );
-    if (!data.is_favorite && state.showFavoritesOnly && state.playingCardId === id) {
-      state.playingCardId = null;
-    }
     renderCards();
   } catch (error) {
     console.error('[supabase] Impossible de mettre à jour la demande.', error);
