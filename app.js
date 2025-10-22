@@ -270,6 +270,14 @@ function renderCards() {
       article.dataset.cardId = card.id;
       article.classList.toggle('is-pinned', Boolean(card.is_favorite));
       article.classList.toggle('is-active', state.playingCardId === card.id);
+      article.addEventListener('click', (event) => {
+        const isActionClick = event.target.closest('.phrase-actions');
+        const isButtonClick = event.target.closest('.phrase-button');
+        if (isActionClick || isButtonClick) {
+          return;
+        }
+        handlePlay(card);
+      });
     }
 
     if (button) {
