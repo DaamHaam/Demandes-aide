@@ -14,7 +14,7 @@
   </head>
   <body>
     <header>
-      <span class="app-version" aria-label="Version de l'application">v0.17</span>
+      <span class="app-version" aria-label="Version de l'application">v0.18</span>
       <div class="header-actions">
         <button
           id="editToggle"
@@ -58,17 +58,9 @@
             Phrase parlée
             <textarea id="fieldTts" name="tts" rows="3" maxlength="240" placeholder="Reprendre le texte du bouton si laissé vide."></textarea>
           </label>
-          <label>
-            URL du MP3 (optionnel)
-            <input type="url" id="fieldAudio" name="audio" placeholder="https://..." />
-          </label>
           <label class="checkbox-row">
             <input type="checkbox" id="fieldPinned" name="pinned" />
             Ajouter aux favoris
-          </label>
-          <label class="checkbox-row" id="regenerateRow" hidden>
-            <input type="checkbox" id="fieldRegenerate" name="regenerate" />
-            Régénérer le MP3 après les modifications
           </label>
         </div>
         <div class="dialog-footer">
