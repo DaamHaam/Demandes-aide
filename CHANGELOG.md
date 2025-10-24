@@ -2,6 +2,11 @@
 
 Ce document suit les changements notables du projet. Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et respecte la numérotation sémantique.
 
+## [0.15] - 2025-10-17
+### Modifié
+- Mise à jour de l'interface pour afficher la version v0.15 dans l'en-tête.
+- Invalidation du cache statique du service worker avec l'identifiant `aac-static-v15` pour rafraîchir les fichiers de la version 0.15.
+
 ## [0.10] - 2025-10-10
 ### Modifié
 - Suppression de l'option « Rajouter s'il vous plaît » et retrait automatique de cette demande pour les données existantes.
