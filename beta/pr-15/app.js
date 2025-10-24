@@ -14,7 +14,6 @@ const dialogTitle = document.querySelector('#dialogTitle');
 const phraseForm = document.querySelector('#phraseForm');
 const fieldLabel = document.querySelector('#fieldLabel');
 const fieldTts = document.querySelector('#fieldTts');
-const fieldAudio = document.querySelector('#fieldAudio');
 const fieldPinned = document.querySelector('#fieldPinned');
 const cancelDialog = document.querySelector('#cancelDialog');
 const savePhraseButton = document.querySelector('#savePhrase');
@@ -78,15 +77,14 @@ phraseForm?.addEventListener('submit', async (event) => {
   }
 
   const phrase = fieldTts.value.trim() || label;
-  const audioPath = fieldAudio?.value.trim() || null;
   const isFavorite = fieldPinned.checked;
 
   savePhraseButton.disabled = true;
   try {
     if (state.editingCardId) {
-      await updateCard(state.editingCardId, { label, phrase, audioPath, isFavorite });
+      await updateCard(state.editingCardId, { label, phrase, isFavorite });
     } else {
-      await addCard({ label, phrase, audioPath, isFavorite });
+      await addCard({ label, phrase, isFavorite });
     }
     closeDialog();
   } catch (error) {
@@ -103,9 +101,6 @@ registerServiceWorker();
 
 function resetForm() {
   phraseForm?.reset();
-  if (fieldAudio) {
-    fieldAudio.value = '';
-  }
   if (fieldPinned) {
     fieldPinned.checked = false;
   }
@@ -139,9 +134,6 @@ function openDialog(card = null) {
     }
     if (fieldTts) {
       fieldTts.value = card.phrase ?? '';
-    }
-    if (fieldAudio) {
-      fieldAudio.value = card.audio_path ?? '';
     }
     if (fieldPinned) {
       fieldPinned.checked = Boolean(card.is_favorite);
@@ -438,12 +430,12 @@ async function handlePlay(card) {
   }
 }
 
-async function addCard({ label, phrase, audioPath, isFavorite }) {
+async function addCard({ label, phrase, isFavorite }) {
   try {
     const payload = {
       label,
       phrase,
-      audio_path: audioPath || null,
+      audio_path: null,
       is_favorite: Boolean(isFavorite),
       is_active: true
     };
@@ -512,12 +504,11 @@ async function deleteCard(id) {
   }
 }
 
-async function updateCard(id, { label, phrase, audioPath, isFavorite }) {
+async function updateCard(id, { label, phrase, isFavorite }) {
   try {
     const payload = {
       label,
       phrase,
-      audio_path: audioPath || null,
       is_favorite: Boolean(isFavorite)
     };
 

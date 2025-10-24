@@ -2,6 +2,13 @@
 
 Ce document suit les changements notables du projet. Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et respecte la numérotation sémantique.
 
+## [0.18] - 2025-10-20
+### Modifié
+- Agrandissement des boutons principaux en leur donnant une largeur identique à la hauteur pour conserver une forme circulaire sur smartphone.
+- Suppression des champs liés au MP3 dans le formulaire puisque l'audio est géré directement depuis Supabase.
+- Ajustement du bandeau supérieur (safe area iOS) et du cartouche de version pour éviter que les cartes n'apparaissent sous la zone système.
+- Invalidation du cache statique du service worker (`aac-static-v18`) et mise à jour de l'interface en v0.18.
+
 ## [0.17] - 2025-10-19
 ### Modifié
 - Retrait de l'étoile décorative affichée à gauche des cartes en mode édition puisqu'elle faisait doublon avec la bordure jaune et l'action étoile.
