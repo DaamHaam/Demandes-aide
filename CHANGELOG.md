@@ -2,6 +2,13 @@
 
 Ce document suit les changements notables du projet. Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et respecte la numérotation sémantique.
 
+## [0.16] - 2025-10-18
+### Modifié
+- Affichage de la version v0.16 encore plus discret et rapproché du coin supérieur gauche pour libérer l'espace des commandes.
+- Agrandissement des boutons principaux en largeur pour conserver une forme circulaire facile à viser.
+- Suppression de la mise en surbrillance du texte des cartes lors d'un clic en rendant l'étiquette non sélectionnable.
+- Mise à jour du cache statique du service worker (`aac-static-v16`) pour diffuser les fichiers de la version 0.16.
+
 ## [0.15] - 2025-10-17
 ### Modifié
 - Mise à jour de l'interface pour afficher la version v0.15 dans l'en-tête.
