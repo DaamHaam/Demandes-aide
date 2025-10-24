@@ -25,6 +25,7 @@ const state = {
   cards: [],
   isEditMode: false,
   isLoading: false,
+  activeCardId: null,
   playingCardId: null,
   editingCardId: null
 };
@@ -214,6 +215,9 @@ async function loadCards() {
     }
 
     state.cards = sortCards(Array.isArray(data) ? data : []);
+    if (state.activeCardId && !state.cards.some((card) => card.id === state.activeCardId)) {
+      state.activeCardId = null;
+    }
     if (state.playingCardId && !state.cards.some((card) => card.id === state.playingCardId)) {
       state.playingCardId = null;
     }
@@ -239,6 +243,7 @@ function renderCards() {
   grid.innerHTML = '';
 
   if (cards.length === 0) {
+    state.activeCardId = null;
     if (emptyState) {
       if (state.isLoading) {
         emptyState.textContent = 'Chargement des demandes...';
@@ -269,7 +274,7 @@ function renderCards() {
     if (article) {
       article.dataset.cardId = card.id;
       article.classList.toggle('is-pinned', Boolean(card.is_favorite));
-      article.classList.toggle('is-active', state.playingCardId === card.id);
+      article.classList.toggle('is-active', state.activeCardId === card.id);
       article.addEventListener('click', (event) => {
         const isActionClick = event.target.closest('.phrase-actions');
         const isButtonClick = event.target.closest('.phrase-button');
@@ -391,18 +396,21 @@ async function handlePlay(card) {
     return;
   }
 
+  state.activeCardId = card.id;
+  renderCards();
+
   if (!card.audio_path) {
     if (!audioPlayer.paused) {
       audioPlayer.pause();
     }
-    state.playingCardId = state.playingCardId === card.id ? null : card.id;
+    state.playingCardId = null;
     renderCards();
     return;
   }
 
   const url = toPublicUrl(card.audio_path);
   if (!url) {
-    state.playingCardId = state.playingCardId === card.id ? null : card.id;
+    state.playingCardId = null;
     renderCards();
     return;
   }
@@ -497,6 +505,9 @@ async function deleteCard(id) {
     state.cards = sortCards(state.cards.filter((card) => card.id !== id));
     if (state.playingCardId === id) {
       state.playingCardId = null;
+    }
+    if (state.activeCardId === id) {
+      state.activeCardId = null;
     }
     renderCards();
   } catch (error) {
