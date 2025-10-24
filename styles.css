@@ -153,6 +153,7 @@ main {
   display: flex;
   align-items: center;
   gap: 12px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .phrase-card.drag-over-top {
@@ -188,6 +189,7 @@ main {
   gap: 12px;
   -webkit-user-select: none;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .phrase-button * {
@@ -221,27 +223,6 @@ main {
 
 .phrase-actions[hidden] {
   display: none !important;
-}
-
-.pinned-indicator {
-  position: absolute;
-  top: 12px;
-  left: 16px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: rgba(255, 184, 0, 0.2);
-  color: #f7b500;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.95rem;
-  font-weight: 700;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.14);
-}
-
-.pinned-indicator.is-visible {
-  display: inline-flex;
 }
 
 .phrase-actions button {
@@ -335,6 +316,7 @@ dialog::backdrop {
 .dialog-body textarea,
 .dialog-body select {
   font: inherit;
+  font-size: 1rem;
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid var(--border-soft);

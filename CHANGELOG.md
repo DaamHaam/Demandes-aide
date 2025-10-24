@@ -2,6 +2,12 @@
 
 Ce document suit les changements notables du projet. Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et respecte la numérotation sémantique.
 
+## [0.17] - 2025-10-19
+### Modifié
+- Retrait de l'étoile décorative affichée à gauche des cartes en mode édition puisqu'elle faisait doublon avec la bordure jaune et l'action étoile.
+- Suppression du zoom persistant après fermeture du formulaire en donnant une taille lisible aux champs et en annulant le focus actif lors de la fermeture.
+- Invalidation du cache statique du service worker (`aac-static-v17`) et mise à jour de l'interface en v0.17.
+
 ## [0.16] - 2025-10-18
 ### Modifié
 - Affichage de la version v0.16 encore plus discret et rapproché du coin supérieur gauche pour libérer l'espace des commandes.

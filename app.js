@@ -156,6 +156,9 @@ function openDialog(card = null) {
 
 function closeDialog() {
   if (dialog?.open) {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     dialog.close();
   }
 }
@@ -262,7 +265,6 @@ function renderCards() {
     const cardWrapper = templateContent;
     const article = cardWrapper.querySelector('.phrase-card');
     const button = cardWrapper.querySelector('.phrase-button');
-    const pinnedIndicator = cardWrapper.querySelector('.pinned-indicator');
     const starButton = cardWrapper.querySelector('.star');
     const deleteButton = cardWrapper.querySelector('.delete');
     const settingsButton = cardWrapper.querySelector('.settings');
@@ -289,12 +291,6 @@ function renderCards() {
       button.replaceChildren(createLabelElement(card));
       button.dataset.cardId = card.id;
       button.addEventListener('click', () => handlePlay(card));
-    }
-
-    if (pinnedIndicator) {
-      const shouldDisplayPinned = state.isEditMode && Boolean(card.is_favorite);
-      pinnedIndicator.textContent = '★';
-      pinnedIndicator.classList.toggle('is-visible', shouldDisplayPinned);
     }
 
     if (actions) {
