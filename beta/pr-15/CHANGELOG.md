@@ -2,6 +2,13 @@
 
 Ce document suit les changements notables du projet. Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et respecte la numérotation sémantique.
 
+## [0.19] - 2025-10-21
+### Modifié
+- Agrandissement des icônes des boutons d'en-tête et des actions d'édition pour qu'elles correspondent à la taille des boutons tactiles.
+- Affichage du numéro de version v0.19 encore plus discret et repositionné pour libérer l'espace d'action en haut à droite.
+- Ajout de `viewport-fit=cover` afin que le bandeau supérieur occupe toute la zone de sécurité sur iPhone et évite l'apparition des cartes sous la barre de statut.
+- Invalidation du cache statique du service worker (`aac-static-v19`) pour diffuser les ressources de la version 0.19.
+
 ## [0.18] - 2025-10-20
 ### Modifié
 - Agrandissement des boutons principaux en leur donnant une largeur identique à la hauteur pour conserver une forme circulaire sur smartphone.
