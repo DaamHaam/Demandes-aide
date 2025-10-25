@@ -2,7 +2,7 @@
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#1f6feb" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -14,12 +14,8 @@
   </head>
   <body>
     <header>
-      <span class="app-version" aria-label="Version de l'application">v0.10</span>
+      <span class="app-version" aria-label="Version de l'application">v0.19</span>
       <div class="header-actions">
-        <button id="favoritesToggle" class="toolbar-button" type="button" aria-pressed="false">
-          <span class="icon" aria-hidden="true">★</span>
-          <span class="label">Favoris</span>
-        </button>
         <button
           id="editToggle"
           class="toolbar-button icon-only"
@@ -66,10 +62,6 @@
             <input type="checkbox" id="fieldPinned" name="pinned" />
             Ajouter aux favoris
           </label>
-          <label class="checkbox-row" id="regenerateRow" hidden>
-            <input type="checkbox" id="fieldRegenerate" name="regenerate" />
-            Régénérer le MP3 après les modifications
-          </label>
         </div>
         <div class="dialog-footer">
           <button type="button" class="secondary" id="cancelDialog">Annuler</button>
@@ -82,16 +74,16 @@
       <div class="phrase-item">
         <article class="phrase-card" draggable="true">
           <button type="button" class="phrase-button"></button>
-          <div class="phrase-actions">
-            <span class="pinned-indicator" aria-hidden="true"></span>
+          <div class="phrase-actions" aria-hidden="true">
             <button class="star" type="button" aria-label="Basculer en favori"></button>
-            <button class="edit" type="button" aria-label="Modifier"></button>
+            <button class="delete" type="button" aria-label="Supprimer la demande"></button>
+            <button class="settings" type="button" aria-label="Modifier la demande"></button>
           </div>
         </article>
         <p class="queue-indicator" hidden>MP3 en cours...</p>
       </div>
     </template>
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="./app.js"></script>
   </body>
 </html>
