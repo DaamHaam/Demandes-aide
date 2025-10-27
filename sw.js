@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'aac-static-v8';
+const STATIC_CACHE = 'aac-static-v19';
 const MP3_CACHE = 'aac-mp3-v1';
 const MP3_CACHE_LIMIT = 30;
 const STATIC_ASSETS = [
@@ -52,6 +52,11 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   if (request.method !== 'GET') {
+    return;
+  }
+
+  if (url.origin === 'https://zfqpbddopgrqbsgizith.supabase.co') {
+    event.respondWith(fetch(request));
     return;
   }
 
